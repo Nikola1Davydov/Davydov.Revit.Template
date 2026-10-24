@@ -11,8 +11,8 @@ namespace Davydov.Revit.Hosting.Threading;
 ///         Callable from any thread; calls run one after another in call order.
 ///     </para>
 ///     <para>
-///         Document-bound overloads (<c>InvokeAsync(DocumentRef, …)</c>) and <c>InvokeBatchedAsync</c> come with the document
-///         registry in phase 3 (plan, section 7).
+///         Which document to work with is the add-in's decision: it wraps the dispatcher in its own service, as
+///         <c>ActiveDocument</c> in the template (plan, section 7).
 ///     </para>
 /// </remarks>
 [PublicAPI]

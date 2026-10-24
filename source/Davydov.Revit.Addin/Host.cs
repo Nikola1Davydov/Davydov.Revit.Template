@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Reflection;
 using Autodesk.Revit.UI;
+using Davydov.Revit.Addin.Services.Documents;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -44,6 +45,13 @@ public static partial class Host
 
         //Davydov.Revit.Hosting: dispatcher, Revit lifetime, notifications. Before the first await — see AddRevitHosting
         builder.AddRevitHosting(application);
+
+        //Commands and their pipeline (plan, section 5); the document rule is the add-in's own (section 7)
+        builder.Services.AddScoped<ActiveDocument>();
+        builder.AddRevitCommands(commands => commands
+            .FromAssemblyOf<Application>()
+            .UseCommandLogging()
+            .Use<DocumentCheckMiddleware>());
 
 #if DEBUG
         builder.Services.AddHostedService<StartupProbe>();
