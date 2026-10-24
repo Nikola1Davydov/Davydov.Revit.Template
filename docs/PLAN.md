@@ -15,7 +15,7 @@ AnalyseTool: WebView2-интерфейс, конвейер команд в ст�
 | Часть | Откуда | Что даёт |
 | --- | --- | --- |
 | **Основа** | Nice3point | `Nice3point.Revit.Sdk` (конфигурации `Debug.R25…Release.R27`, TFM, `DeployAddin`, `LaunchRevit`), `Nice3point.Revit.Toolkit` (external events, док-панели, базовые классы приложения и команд), `Nice3point.Revit.Extensions` (лента), `Host.cs` + `ServiceDefaults` (Generic Host, логирование в журнал Revit), ModularPipelines (сборка), WixSharp (установщик), TUnit + `Nice3point.TUnit.Revit` (тесты) |
-| **Наши модули** | AnalyseTool + этот план | `Davydov.Revit.Hosting` — конвейер команд, документы, события, `IRevitDispatcher`, настройки, кнопки ленты; `Davydov.Revit.Hosting.WebView` — WebView2-окна и док-панель, мост к React; `MyTool.Launcher` — изоляция зависимостей на всех версиях Revit (решение 26) |
+| **Наши модули** | AnalyseTool + этот план | `Davydov.Revit.Hosting` — конвейер команд, документы, события, `IRevitDispatcher`, настройки, кнопки ленты; `Davydov.Revit.Hosting.WebView` — WebView2-окна и док-панель, мост к React; `Davydov.Revit.Addin.Launcher` — изоляция зависимостей на всех версиях Revit (решение 26) |
 
 Наши модули подключаются так же, как у Nice3point подключается `AddServiceDefaults()` — методами-расширениями
 `IHostApplicationBuilder`, в стиле ASP.NET Core / .NET Aspire:
@@ -23,7 +23,7 @@ AnalyseTool: WebView2-интерфейс, конвейер команд в ст�
 | ASP.NET Core | В шаблоне |
 | --- | --- |
 | `WebApplication.CreateBuilder()` / `Program.cs` | `Host.cs` по образцу Nice3point: `HostApplicationBuilder` с `DisableDefaults = true` |
-| `builder.AddServiceDefaults()` (Aspire) | то же: проект `MyTool.ServiceDefaults` из шаблона Nice3point |
+| `builder.AddServiceDefaults()` (Aspire) | то же: проект `Davydov.Revit.Addin.ServiceDefaults` из шаблона Nice3point |
 | `builder.Services` (DI), `IOptions<T>`, `ILogger<T>` | то же, Microsoft.Extensions.* |
 | Controllers + `AddControllers()` | классы команд + `builder.AddRevitCommands(...)` (reflection-скан сборок, как в AnalyseTool) |
 | Middleware | конвейер команд, настраивается в `AddRevitCommands(c => c.Use…)` (раздел 5.4) |
@@ -37,35 +37,28 @@ AnalyseTool: WebView2-интерфейс, конвейер команд в ст�
 ### Как это выглядит
 
 ```csharp
-// source/MyTool/Application.cs — как у Nice3point
+// source/Davydov.Revit.Addin/Application.cs — как у Nice3point
 public class Application : AsyncExternalApplication          // Toolkit; создаётся Launcher'ом внутри ALC (раздел 8)
 {
     public override async Task OnStartupAsync()
     {
-        try
-        {
-            await Host.StartAsync();
-            CreateRibbon();
-        }
-        catch (Exception ex)
-        {
-            FallbackRibbon.Create(Application, ex);           // «Ошибка загрузки — открыть лог» (раздел 8)
-        }
+        await Host.StartAsync();                               // исключение дойдёт до Launcher → запасная панель (раздел 8)
+        CreateRibbon();
     }
 
     public override async Task OnShutdownAsync() => await Host.StopAsync();
 
     private void CreateRibbon()
     {
-        var panel = Application.CreatePanel("Семейства", "MyTool");
-        panel.AddButton<FamiliesCommand>("Семейства").SetLargeImage("/MyTool;component/Resources/Icons/Families32.png");
+        var panel = Application.CreatePanel("Семейства", "Davydov.Revit.Addin");
+        panel.AddButton<FamiliesCommand>("Семейства").WithIcons("Families");                       // иконки — встроенные ресурсы
         panel.AddButton<PurgeFamiliesCommand>("Очистить").SetAvailability<ProjectAvailability>();   // наши обёртки, раздел 8
     }
 }
 ```
 
 ```csharp
-// source/MyTool/Host.cs — как у Nice3point + наши модули
+// source/Davydov.Revit.Addin/Host.cs — как у Nice3point + наши модули
 public static class Host
 {
     private static IHost? _host;
@@ -74,7 +67,7 @@ public static class Host
     {
         var builder = new HostApplicationBuilder(new HostApplicationBuilderSettings
         {
-            ApplicationName = "MyTool",
+            ApplicationName = "Davydov.Revit.Addin",
             ContentRootPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
             DisableDefaults = true,
         });
@@ -100,7 +93,7 @@ public static class Host
 ```
 
 ```csharp
-// source/MyTool/Features/Families/RenameFamily.cs — команда конвейера, имя = "RenameFamily"
+// source/Davydov.Revit.Addin/Features/Families/RenameFamily.cs — команда конвейера, имя = "RenameFamily"
 [Command(Description = "Переименовать семейство")]
 public sealed class RenameFamily(IRevitDispatcher revit, ILogger<RenameFamily> log)
     : ICommand<RenameFamilyRequest, RenameFamilyResult>
@@ -140,12 +133,12 @@ public sealed class RenameFamily(IRevitDispatcher revit, ILogger<RenameFamily> l
 ## 3. Структура решения (по образцу Nice3point `MultiProjectSolution`)
 
 ```
-MyTool/
+Davydov.Revit.Addin/
 ├─ build/                                  ModularPipelines: compile / test / pack (installer + bundle) / publish
 │  ├─ Modules/, Options/, Program.cs, appsettings.json
 ├─ installer/                              WixSharp: .msi per-user и per-machine
 ├─ source/
-│  ├─ MyTool/                              приложение (Nice3point «Revit AddIn Application»)
+│  ├─ Davydov.Revit.Addin/                              приложение (Nice3point «Revit AddIn Application»)
 │  │  ├─ Application.cs                    AsyncExternalApplication: Host + лента
 │  │  ├─ Host.cs                           Generic Host + AddServiceDefaults + наши модули
 │  │  ├─ Commands/                         кнопки ленты — ExternalCommand (как у Nice3point)
@@ -154,23 +147,23 @@ MyTool/
 │  │  ├─ Resources/Icons/
 │  │  ├─ appsettings.json
 │  │  └─ ClientApp/                        минимальный React + Vite (раздел 10)
-│  ├─ MyTool.ServiceDefaults/              Nice3point: логирование, диагностика, сериализация (+ наши слои конфигурации)
+│  ├─ Davydov.Revit.Addin.ServiceDefaults/              Nice3point: логирование, диагностика, сериализация (+ наши слои конфигурации)
 │  ├─ Davydov.Revit.Hosting/               НАШ модуль, headless: команды, конвейер, документы, события, IRevitDispatcher, IUserSettings
 │  ├─ Davydov.Revit.Hosting.WebView/       НАШ модуль, WPF: окружение WebView2, WebViewWindow, док-панель, транспорт, revit-bridge (TS)
-│  └─ MyTool.Launcher/                     все версии Revit: MyTool.addin, App.cs (свой ALC), Proxies.cs (решение 26)
+│  └─ Davydov.Revit.Addin.Launcher/                     все версии Revit: Davydov.Revit.Addin.Launcher.addin, App.cs (свой ALC), Proxies.cs, Fallback/ (решение 26)
 ├─ tests/
-│  ├─ MyTool.Tests/                        TUnit + Nice3point.TUnit.Revit — внутри Revit
+│  ├─ Davydov.Revit.Addin.Tests/                        TUnit + Nice3point.TUnit.Revit — внутри Revit
 │  └─ Davydov.Revit.Hosting.Tests/         TUnit — без Revit
 ├─ .github/workflows/                      Compile.yml, PublishRelease.yml (из Nice3point)
 ├─ global.json                             SDK 10, Microsoft.Testing.Platform
-├─ MyTool.slnx                             конфигурации Debug.R25 … Release.R27
+├─ Davydov.Revit.Addin.slnx                             конфигурации Debug.R25 … Release.R27
 ├─ Directory.Packages.props                CPM — наше отклонение от Nice3point (решение 22); CentralPackageFloatingVersionsEnabled=true
 ├─ CLAUDE.md                               инструкции для ИИ-ассистентов (фаза 7)
 └─ .template.config/                       template.json (свой dotnet new, решение 24)
 ```
 
 Фичи можно выносить в отдельные проекты-модули (Nice3point «Revit AddIn Module»), когда приложение вырастет; по
-умолчанию они в `source/MyTool/Features/`.
+умолчанию они в `source/Davydov.Revit.Addin/Features/`.
 
 Два слова «команда» в одном проекте: **`Commands/`** — кнопки Revit (`ExternalCommand`), так принято у Nice3point;
 **`Features/`** — команды нашего конвейера (`ICommand<…>`), так было в AnalyseTool. В WPF-коде при конфликте имени
@@ -182,9 +175,9 @@ MyTool/
 | --- | --- | --- |
 | `Davydov.Revit.Hosting` | Revit API (только компиляция), Nice3point.Revit.Toolkit, Microsoft.Extensions.* | **headless**: без `UseWPF`, `System.Windows`, `MessageBox` |
 | `Davydov.Revit.Hosting.WebView` | Hosting, WebView2, Toolkit | единственное место WPF и диалогов наших модулей |
-| `MyTool.ServiceDefaults` | Toolkit, Nice3point.Revit.Logging, Microsoft.Extensions.Hosting, Serilog (файловый лог, решение 23) | как в Nice3point |
-| `MyTool.Launcher` | только Revit API; на приложение — **только** ради порядка сборки и `deps.json` | в коде Launcher нельзя использовать типы приложения и модулей: они загрузились бы в default ALC в обход изоляции |
-| `MyTool` (приложение) | всё перечисленное, Nice3point.Revit.Extensions | в `Features/`, `Services/`, `EventHandlers/` — без `System.Windows` (UI — через `IUserNotifier` и фронтенд) и без `ActiveUIDocument` (раздел 7) |
+| `Davydov.Revit.Addin.ServiceDefaults` | Toolkit, Nice3point.Revit.Logging, Microsoft.Extensions.Hosting, Serilog (файловый лог, решение 23) | как в Nice3point |
+| `Davydov.Revit.Addin.Launcher` | только Revit API; на приложение — **только** ради порядка сборки и `deps.json` | в коде Launcher нельзя использовать типы приложения и модулей: они загрузились бы в default ALC в обход изоляции |
+| `Davydov.Revit.Addin` (приложение) | всё перечисленное, Nice3point.Revit.Extensions | в `Features/`, `Services/`, `EventHandlers/` — без `System.Windows` (UI — через `IUserNotifier` и фронтенд) и без `ActiveUIDocument` (раздел 7) |
 | `tests/*` | что тестируют | — |
 
 ## 4. API — сводно
@@ -340,7 +333,7 @@ public interface IRevitLifetime
 
   | Проверка | Пример сообщения |
   | --- | --- |
-  | одинаковые имена команд | «"GetFamilies" объявлена дважды: MyTool.Features.Families.GetFamilies и MyTool.Features.Library.GetFamiliesCommand» |
+  | одинаковые имена команд | «"GetFamilies" объявлена дважды: Davydov.Revit.Addin.Features.Families.GetFamilies и Davydov.Revit.Addin.Features.Library.GetFamiliesCommand» |
   | `TRequest` — интерфейс или абстрактный класс | «RenameFamilyRequest: System.Text.Json не сможет создать абстрактный тип» |
   | класс реализует несколько `ICommand<…>` | «PurgeFamilies реализует ICommand дважды» |
   | точка в имени команды приложения | «точка зарезервирована за Host.*» |
@@ -636,34 +629,46 @@ Revit-событие (поток Revit)
 одинаковая на всех версиях**, как в AnalyseTool:
 
 ```
-Revit 2025–2027 → MyTool.addin (в проекте MyTool.Launcher) → MyTool.Launcher.App
+Revit 2025–2027 → Davydov.Revit.Addin.Launcher.addin (в проекте Launcher) → Davydov.Revit.Addin.Launcher.App
   ├─ свой AssemblyLoadContext + AssemblyDependencyResolver, как IsolatedAssemblyLoadContent в AnalyseTool
-  ├─ в нём — MyTool.dll и все зависимости (Microsoft.Extensions.*, WebView2, Toolkit); Revit API — общий
-  ├─ reflection — ОДИН раз: создать MyTool.Application внутри ALC и вызвать его OnStartup / OnShutdown
+  ├─ в нём — Davydov.Revit.Addin.dll и все зависимости (Microsoft.Extensions.*, WebView2, Toolkit); Revit API — общий
+  ├─ reflection — ОДИН раз: создать Davydov.Revit.Addin.Application внутри ALC и вызвать его OnStartup / OnShutdown
   │   (Toolkit в чужом ALC сам отключает ResolveHelper — проверено по исходникам)
-  ├─ MyTool.Application.OnStartupAsync: Host.StartAsync() → CreateRibbon()
+  ├─ Davydov.Revit.Addin.Application.OnStartupAsync: Host.StartAsync() → CreateRibbon()
   └─ ошибка на любом шаге → запасная панель «Ошибка загрузки — открыть лог» без ALC (урок BugsCommand)
 ```
 
 - Манифест один — в Launcher, без `ManifestSettings`: Launcher без зависимостей грузится в контекст Revit, всё
   остальное живёт в нашем ALC. `DeployAddin` включён в Launcher (SDK требует его в проекте с манифестом); Launcher
   ссылается на приложение ради порядка сборки и `deps.json`, поэтому в папку плагина попадает всё.
-- Имя класса приложения (`MyTool.Application`) Launcher берёт из константы, которую шаблон подставляет при создании
-  проекта. Если класс не найден — запасная панель с понятным текстом, а не пустая лента.
+- Имя класса приложения (`Davydov.Revit.Addin.Application`) Launcher берёт из константы (`PluginInfo`), которую шаблон
+  подставляет при создании проекта. Если класс не найден — запасная панель с понятным текстом, а не пустая лента.
+- **Сделано в фазе 1:**
+  - зависимости для ALC берутся из `deps.json` **Launcher** (у проектов, на которые ссылаются, своего `deps.json` в
+    папке плагина нет), как в AnalyseTool;
+  - запасная панель — только в Launcher: `Application.OnStartupAsync` не ловит исключения, они доходят до Launcher,
+    который пишет `%LOCALAPPDATA%\<плагин>\logs\<год>\startup-error.txt` и ставит кнопку открытия этого файла на
+    вкладку Add-Ins;
+  - Launcher сообщает модулю свой путь и пространство имён прокси через `AppContext.SetData` (данные процесса, видны
+    из обоих контекстов без общих типов) — их читает `LauncherInfo` в `Davydov.Revit.Hosting`;
+  - иконки — встроенные ресурсы (`EmbeddedResource`) и `Icons.WithIcons(...)`: pack URI ищет сборку по имени и мог
+    бы загрузить вторую копию приложения вне ALC;
+  - `DeployAddin` — только в Debug-конфигурациях; Release публикует в `bin\Release.R2x\publish`;
+  - манифест называется `Davydov.Revit.Addin.Launcher.addin` — так его находит и удаляет при `Clean` SDK Nice3point.
 - Это отклонение от структуры Nice3point (у них манифест в приложении с `ManifestSettings`). Если штатная изоляция
   Revit когда-нибудь станет надёжной, Launcher можно убрать: приложение и кнопки уже написаны в стиле Nice3point.
 
 ### Кнопки — классы `ExternalCommand` в `Commands/`
 
 ```csharp
-// source/MyTool/Commands/PurgeFamiliesCommand.cs
+// source/Davydov.Revit.Addin/Commands/PurgeFamiliesCommand.cs
 [Transaction(TransactionMode.Manual)]
 public class PurgeFamiliesCommand : ExternalCommand
 {
     public override void Execute() => Host.GetService<ICommandSender>().Send<PurgeFamilies>();
 }
 
-// source/MyTool/Commands/FamiliesCommand.cs
+// source/Davydov.Revit.Addin/Commands/FamiliesCommand.cs
 [Transaction(TransactionMode.Manual)]
 public class FamiliesCommand : ExternalCommand
 {
@@ -674,21 +679,20 @@ public class FamiliesCommand : ExternalCommand
 
 ```csharp
 // Application.CreateRibbon — Nice3point.Revit.Extensions + наши обёртки AddButton / SetAvailability
-var panel = Application.CreatePanel("Семейства", "MyTool");
+var panel = Application.CreatePanel("Семейства", "Davydov.Revit.Addin");
 panel.AddButton<FamiliesCommand>("Семейства")
-    .SetImage("/MyTool;component/Resources/Icons/Families16.png")
-    .SetLargeImage("/MyTool;component/Resources/Icons/Families32.png");
+    .WithIcons("Families");                                // Families16.png / Families32.png — встроенные ресурсы
 panel.AddButton<PurgeFamiliesCommand>("Очистить")
     .SetAvailability<ProjectAvailability>();               // IExternalCommandAvailability
 
 #if DEBUG
-var dev = Application.CreatePanel("Dev", "MyTool");        // Debug-панель для проверки команд (раздел 12)
+var dev = Application.CreatePanel("Dev", "Davydov.Revit.Addin");        // Debug-панель для проверки команд (раздел 12)
 dev.AddButton<PingCommand>("Ping");
 #endif
 ```
 
 ```csharp
-// source/MyTool.Launcher/Proxies.cs — по строке на кнопку и на класс доступности
+// source/Davydov.Revit.Addin.Launcher/Proxies.cs — по строке на кнопку и на класс доступности
 public sealed class FamiliesCommand : ProxyCommand;
 public sealed class PurgeFamiliesCommand : ProxyCommand;
 public sealed class PingCommand : ProxyCommand;
@@ -698,9 +702,9 @@ public sealed class ProjectAvailability : ProxyAvailability;
 ```
 
 Почему прокси: Revit создаёт класс кнопки сам по пути к DLL и имени типа. `AddPushButton<T>` из Extensions берёт путь
-сборки `T` — Revit загрузил бы `MyTool.dll` второй раз, в обычный контекст, в обход Launcher (и со своей пустой копией
+сборки `T` — Revit загрузил бы `Davydov.Revit.Addin.dll` второй раз, в обычный контекст, в обход Launcher (и со своей пустой копией
 `Host`). Обёртка `AddButton<T>` подставляет путь Launcher и имя прокси, а при старте проверяет, что прокси есть: если
-нет — ошибка «Добавь в MyTool.Launcher/Proxies.cs: `public sealed class PurgeFamiliesCommand : ProxyCommand;`».
+нет — ошибка «Добавь в Davydov.Revit.Addin.Launcher/Proxies.cs: `public sealed class PurgeFamiliesCommand : ProxyCommand;`».
 
 Правила:
 - **Кнопка тонкая.** Она открывает окно (`IWindows`), показывает док-панель или отправляет команду конвейера
@@ -762,7 +766,7 @@ AdWindows (как у кнопок расширений AnalyseTool) не тре�
    mock-режим. Тесты — Vitest.
 2. **React-хуки поверх моста** — `useCommand` / `useCommandMutation` (на TanStack Query: кэш по документу, состояние
    загрузки, прогресс), `useRevitEvent`, `refetchOn`, `RevitDocumentProvider` (follow/pinned).
-3. **Пустое приложение Vite + React + TypeScript** (`source/MyTool/ClientApp`) с одной страницей-примером: вызов команды
+3. **Пустое приложение Vite + React + TypeScript** (`source/Davydov.Revit.Addin/ClientApp`) с одной страницей-примером: вызов команды
    с прогрессом, подписка на смену документа. Сборка в `dist`, который отдаёт `WebViewWindow` (раздел 9), dev-сервер с
    HMR в Debug. В поставку `dist` попадает как `<Content Include="ClientApp/dist/**" CopyToPublishDirectory="PreserveNewest"/>`
    (так SDK Nice3point добавляет файлы в publish и deploy); `npm run build` — шаг перед publish в ModularPipelines.
@@ -786,7 +790,7 @@ return <FamiliesTable data={families.data} onRename={r => rename.mutate(r)} />; 
 
 Позже (фаза 7): типы `TRequest`/`TResponse` и событий для TypeScript генерировать из C#, чтобы фронтенд и бэкенд не расходились.
 
-## 11. Настройки и логи (`MyTool.ServiceDefaults` + модуль)
+## 11. Настройки и логи (`Davydov.Revit.Addin.ServiceDefaults` + модуль)
 
 - **ServiceDefaults — как у Nice3point:** `AddLoggingDefaults` (секция `Logging`, провайдер Debug, журнал Revit через
   `Nice3point.Revit.Logging` с уровнем `Error`), `AppDomainExceptionsHandler` (необработанные исключения — в лог),
@@ -819,7 +823,7 @@ Nice3point (`global.json` → Microsoft.Testing.Platform).
   `DocumentBinding`, реестр команд (правила имён, проверки `Build()`) — с фейковыми `IRevitDispatcher` /
   `IDocumentRegistry`. Типы Revit вне Revit создать нельзя, поэтому логика, которую хотим тестировать, не трогает их
   напрямую.
-- **Тесты внутри Revit** (`tests/MyTool.Tests`, Nice3point «Revit Test») —
+- **Тесты внутри Revit** (`tests/Davydov.Revit.Addin.Tests`, Nice3point «Revit Test») —
   [Nice3point.TUnit.Revit](https://github.com/Nice3point/RevitUnit): тесты выполняются в контексте Revit API, DI —
   через `DependencyInjectionDataSourceAttribute`, как в `MultiProjectSolution`.
 
@@ -857,7 +861,7 @@ Nice3point (`global.json` → Microsoft.Testing.Platform).
 0. **Решения** — открытых вопросов нет (H — решение 23, I — решение 24).
 1. **Скелет на Nice3point** — структура `MultiProjectSolution` (раздел 3) для Revit 2025–2027: `Nice3point.Revit.Sdk`,
    `.slnx` с `Debug.R25…Release.R27`, `global.json`, CPM (`CentralPackageFloatingVersionsEnabled`), `Application.cs` +
-   `Host.cs` + `ServiceDefaults` (с `ValidateOnBuild` и JSON-резолвером), `MyTool.Launcher` с `.addin`, своим ALC и
+   `Host.cs` + `ServiceDefaults` (с `ValidateOnBuild` и JSON-резолвером), `Davydov.Revit.Addin.Launcher` с `.addin`, своим ALC и
    прокси, обёртки `AddButton<T>` / `SetAvailability<T>`, одна кнопка, запасная панель, `DeployAddin`/`LaunchRevit`
    в Launcher. Из `.csproj` Nice3point переносится `EnableDynamicLoading=true`; `IsRepackable=false` (изоляция есть).
    Проверить: Launcher и ALC рядом с AnalyseTool на 2025, 2026 и 2027 (раздел 8), WebView2 в изолированном контексте,
@@ -891,7 +895,7 @@ Nice3point (`global.json` → Microsoft.Testing.Platform).
    (`installer/`) + bundle для Autodesk Store, GitHub workflows `Compile.yml` / `PublishRelease.yml`, версия из
    git-тегов, CHANGELOG. Плюс наше: проверка границ по таблице 3.1 и запрета `ActiveUIDocument` (раздел 7), сборка
    фронтенда в `pack`. Тесты внутри Revit — не в облачном CI: локально или на своём раннере.
-7. **Шаблон** — свой `dotnet new davydov-revit -n MyTool` (решение 24): копия структуры Nice3point + наши модули в
+7. **Шаблон** — свой `dotnet new davydov-revit -n Davydov.Revit.Addin` (решение 24): копия структуры Nice3point + наши модули в
    исходниках, параметры; в README шаблона — с какой версией примера Nice3point он сверен и как переносить их обновления.
    **Каждый новый проект получает свои идентификаторы** (`guids` и `sourceName` в `template.json`): `AddInId` в `.addin`,
    имя класса приложения для Launcher, имя ALC, GUID док-панели, UpgradeCode установщика (`build/appsettings.json`), имена папок WebView2,
@@ -929,9 +933,10 @@ _(открытых вопросов нет)_
 | 18 | `ExceptionHandling` и `DocumentBinding` встроены и всегда стоят первыми; свои слои — в `AddRevitCommands(c => c.Use…)` (~~`Program.cs`~~ — решение 22). По умолчанию (`DocumentKind.Any`) команде нужен открытый документ; `DocumentKind.None` — для команд без документа (`context.Document` = `DocumentRef.None`). | 2026-10-24 |
 | 19 | Встроенного подтверждения опасных команд (`ConfirmDestructive`) нет — ни в базе, ни опционально. Подтверждает вызывающий (страница React, кнопка). `Destructive` в `[Command]` остаётся метаданными (MCP `destructiveHint` в фазе 8). | 2026-10-24 |
 | 20 | Фронтенд в шаблоне минимальный: `revit-bridge` (TS), React-хуки поверх него (TanStack Query, `RevitDocumentProvider`) и пустое приложение Vite + React + TS со страницей-примером. Библиотеку компонентов, таблицы, деревья, роутинг и т.п. выбирает каждый проект. | 2026-10-24 |
-| 21 | Тесты — TUnit: без Revit (`Davydov.Revit.Hosting.Tests`) и внутри Revit через Nice3point.TUnit.Revit (`MyTool.Tests`). Тесты в Revit — локально или на своём раннере, не в облачном CI. Путь запуска плагина (~~Launcher → ALC~~ `.addin` → изоляция Toolkit → `Host`) — Debug-панель «Dev» и ручной чек-лист. | 2026-10-24 |
+| 21 | Тесты — TUnit: без Revit (`Davydov.Revit.Hosting.Tests`) и внутри Revit через Nice3point.TUnit.Revit (`Davydov.Revit.Addin.Tests`). Тесты в Revit — локально или на своём раннере, не в облачном CI. Путь запуска плагина (~~Launcher → ALC~~ `.addin` → изоляция Toolkit → `Host`) — Debug-панель «Dev» и ручной чек-лист. | 2026-10-24 |
 | 22 | **Основа — структура и инструменты Nice3point** (эталон — `samples/MultiProjectSolution`): `Nice3point.Revit.Sdk` (конфигурации `Debug.R25…Release.R27`, `DeployAddin`, `LaunchRevit`), `Nice3point.Revit.Toolkit` (~~изоляция зависимостей вместо своего Launcher/ALC~~ — неверно, Toolkit изоляцию убрал, см. решения 25, 26; `AsyncExternalEvent` под `IRevitDispatcher`, `DockablePaneProvider`), `Nice3point.Revit.Extensions` (лента: кнопки — `ExternalCommand`; ставятся нашей обёрткой `AddButton<T>`, решения 25, 26), `Host.cs` + `ServiceDefaults`, `Nice3point.Revit.Logging`, ModularPipelines вместо NUKE, WixSharp, TUnit. Одна версия Microsoft.Extensions.\* (10.x) для всех версий Revit. Отклонение от Nice3point — CPM (`Directory.Packages.props`). **Наше — модули** `Davydov.Revit.Hosting` (команды, конвейер, документы, события, настройки) и `Davydov.Revit.Hosting.WebView` (WebView2, окна, док-панель, мост), подключаются методами `builder.AddRevitCommands()` / `AddRevitEvents()` / `AddWebView()`. | 2026-10-24 |
 | 23 | Логи: ServiceDefaults Nice3point (Debug + журнал Revit, в Release — `Warning` и выше) **плюс** файловый лог Serilog как провайдер (`builder.Logging.AddSerilog`), `%LOCALAPPDATA%\<Tool>\logs\<RevitVersion>\log-.txt`, `Information`, ротация по дням. | 2026-10-24 |
 | 24 | Раздача — свой `dotnet new davydov-revit`: копия структуры Nice3point `MultiProjectSolution` + наши модули в исходниках (решения 1, 3). Обновления Nice3point переносятся вручную сверкой с их примером; переход на «их шаблон + наши NuGet-пакеты» — когда модули устоятся. | 2026-10-24 |
-| 25 | ~~Изоляция зависимостей: **Revit 2026+** — штатная (`ManifestSettings` в `.addin`, как у Nice3point); **Revit 2025** — свой Launcher + `AssemblyLoadContext`.~~ — заменено решением 26. Остаётся: вход — один reflection-вызов `MyTool.Application` внутри ALC; кнопки ставятся обёрткой `AddButton<T>` / `SetAvailability<T>` и указывают на однострочные прокси в Launcher (`: ProxyCommand` / `: ProxyAvailability`), наличие прокси проверяется при старте; `IsRepackable=false`. | 2026-10-24 |
-| 26 | Изоляция — **всегда свой Launcher + `AssemblyLoadContext`** на всех версиях Revit (2025–2027), как в AnalyseTool. Один `.addin` — в `MyTool.Launcher`, без `ManifestSettings`; штатная изоляция Revit не используется. Отклонение от структуры Nice3point; убрать Launcher можно, когда штатная изоляция станет надёжной. | 2026-10-24 |
+| 25 | ~~Изоляция зависимостей: **Revit 2026+** — штатная (`ManifestSettings` в `.addin`, как у Nice3point); **Revit 2025** — свой Launcher + `AssemblyLoadContext`.~~ — заменено решением 26. Остаётся: вход — один reflection-вызов `Davydov.Revit.Addin.Application` внутри ALC; кнопки ставятся обёрткой `AddButton<T>` / `SetAvailability<T>` и указывают на однострочные прокси в Launcher (`: ProxyCommand` / `: ProxyAvailability`), наличие прокси проверяется при старте; `IsRepackable=false`. | 2026-10-24 |
+| 26 | Изоляция — **всегда свой Launcher + `AssemblyLoadContext`** на всех версиях Revit (2025–2027), как в AnalyseTool. Один `.addin` — в `Davydov.Revit.Addin.Launcher`, без `ManifestSettings`; штатная изоляция Revit не используется. Отклонение от структуры Nice3point; убрать Launcher можно, когда штатная изоляция станет надёжной. | 2026-10-24 |
+| 27 | Имя-заглушка плагина в шаблоне — `Davydov.Revit.Addin` (проекты `Davydov.Revit.Addin`, `.Launcher`, `.ServiceDefaults`, решение `Davydov.Revit.Addin.slnx`); при `dotnet new` заменяется на имя нового плагина. Наши модули (`Davydov.Revit.Hosting*`) имя плагина не используют. | 2026-10-24 |

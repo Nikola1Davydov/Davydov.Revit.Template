@@ -1,0 +1,30 @@
+<Project>
+
+    <!--
+        Central Package Management — the one deviation from the Nice3point layout (plan, decision 22).
+        Revit-specific packages float with the Revit version of the configuration; RevitVersion is
+        set by Nice3point.Revit.Sdk from the configuration name (Debug.R25, Release.R27, ...).
+    -->
+
+    <PropertyGroup>
+        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+        <CentralPackageFloatingVersionsEnabled>true</CentralPackageFloatingVersionsEnabled>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Revit API and Nice3point libraries, compiled per Revit version -->
+        <PackageVersion Include="Nice3point.Revit.Api.RevitAPI" Version="$(RevitVersion).*-*"/>
+        <PackageVersion Include="Nice3point.Revit.Api.RevitAPIUI" Version="$(RevitVersion).*-*"/>
+        <PackageVersion Include="Nice3point.Revit.Toolkit" Version="$(RevitVersion).*-*"/>
+        <PackageVersion Include="Nice3point.Revit.Extensions" Version="$(RevitVersion).*-*"/>
+        <PackageVersion Include="Nice3point.Revit.Logging" Version="$(RevitVersion).*-*"/>
+
+        <!-- One version for every Revit version; the Launcher's AssemblyLoadContext isolates it (decision 26) -->
+        <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.12"/>
+
+        <!-- Compile-time only -->
+        <PackageVersion Include="JetBrains.Annotations" Version="2026.2.0"/>
+        <PackageVersion Include="Polyfill" Version="11.4.3"/>
+    </ItemGroup>
+
+</Project>

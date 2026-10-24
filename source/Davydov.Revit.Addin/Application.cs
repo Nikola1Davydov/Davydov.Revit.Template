@@ -1,0 +1,47 @@
+using Davydov.Revit.Hosting.Ribbon;
+using Davydov.Revit.Addin.Commands;
+using Davydov.Revit.Addin.Resources;
+using Nice3point.Revit.Extensions.UI;
+using Nice3point.Revit.Toolkit.External;
+
+namespace Davydov.Revit.Addin;
+
+/// <summary>
+///     Provides the Revit application entry point.
+/// </summary>
+/// <remarks>
+///     Revit loads Davydov.Revit.Addin.Launcher, which creates this class inside its isolated AssemblyLoadContext (plan, section 8).
+///     An exception here reaches the Launcher, which shows a fallback panel with the startup log.
+/// </remarks>
+[UsedImplicitly]
+public class Application : AsyncExternalApplication
+{
+    /// <inheritdoc />
+    public override async Task OnStartupAsync()
+    {
+        await Host.StartAsync();
+        CreateRibbon();
+    }
+
+    /// <inheritdoc />
+    public override async Task OnShutdownAsync()
+    {
+        await Host.StopAsync();
+    }
+
+    private void CreateRibbon()
+    {
+        var panel = Application.CreatePanel("General", "Davydov.Revit.Addin");
+
+        panel.AddButton<StatusCommand>("Status")
+            .WithIcons("RibbonIcon");
+
+#if DEBUG
+        var devPanel = Application.CreatePanel("Dev", "Davydov.Revit.Addin");
+
+        devPanel.AddButton<ActiveDocumentCommand>("Active\ndocument")
+            .SetAvailability<DocumentAvailability>()
+            .WithIcons("RibbonIcon");
+#endif
+    }
+}
