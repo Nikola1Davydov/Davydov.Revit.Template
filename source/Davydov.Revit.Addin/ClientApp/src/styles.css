@@ -1,0 +1,59 @@
+/* Minimal styles of the sample page; the project picks its own UI library (decision 20). */
+
+:root {
+  color-scheme: light dark;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+}
+
+body {
+  margin: 0;
+}
+
+.page {
+  padding: 16px 20px;
+}
+
+.page.compact {
+  padding: 8px 10px;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+h1 {
+  font-size: 18px;
+  margin: 0;
+}
+
+h2 {
+  font-size: 14px;
+  margin: 16px 0 6px;
+}
+
+button {
+  margin-right: 6px;
+}
+
+table {
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+
+td {
+  padding: 2px 12px 2px 0;
+}
+
+.badge {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.error {
+  color: #c42a2a;
+}

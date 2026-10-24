@@ -1,0 +1,35 @@
+using System.Diagnostics;
+using Davydov.Revit.Hosting.Commands;
+using Microsoft.Extensions.Logging;
+
+namespace Davydov.Revit.Hosting.Pipeline;
+
+/// <summary>
+///     Logs who called which command, from where, how long it took and how it ended
+///     (<c>UseCommandLogging</c>, plan, section 5.4).
+/// </summary>
+public sealed partial class CommandLoggingMiddleware(ILogger<CommandLoggingMiddleware> logger) : ICommandMiddleware
+{
+    /// <inheritdoc />
+    public async Task<object?> InvokeAsync(CommandContext context, CommandDelegate next)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        try
+        {
+            var result = await next(context).ConfigureAwait(false);
+            LogSucceeded(logger, context.CommandName, context.Source, stopwatch.ElapsedMilliseconds);
+            return result;
+        }
+        catch (Exception exception)
+        {
+            LogFailed(logger, context.CommandName, context.Source, stopwatch.ElapsedMilliseconds, exception.Message);
+            throw;
+        }
+    }
+
+    [LoggerMessage(LogLevel.Information, "Command {Command} ({Source}) succeeded in {ElapsedMilliseconds} ms")]
+    private static partial void LogSucceeded(ILogger logger, string command, string source, long elapsedMilliseconds);
+
+    [LoggerMessage(LogLevel.Information, "Command {Command} ({Source}) failed in {ElapsedMilliseconds} ms: {Reason}")]
+    private static partial void LogFailed(ILogger logger, string command, string source, long elapsedMilliseconds, string reason);
+}

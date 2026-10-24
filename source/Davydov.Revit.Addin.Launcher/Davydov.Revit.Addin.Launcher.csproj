@@ -1,0 +1,35 @@
+<Project Sdk="Nice3point.Revit.Sdk">
+
+    <!--
+        The only assembly Revit loads directly (plan, section 8, decision 26). It references nothing but the Revit API:
+        Davydov.Revit.Addin and all its dependencies run in the Launcher's own AssemblyLoadContext.
+        The project reference to the add-in exists only for build order and for copying its files;
+        Launcher code must never use add-in types, or they would load into Revit's context.
+    -->
+
+    <PropertyGroup>
+        <EnableDynamicLoading>true</EnableDynamicLoading>
+        <LaunchRevit>true</LaunchRevit>
+        <Configurations>Debug.R25;Debug.R26;Debug.R27</Configurations>
+        <Configurations>$(Configurations);Release.R25;Release.R26;Release.R27</Configurations>
+    </PropertyGroup>
+
+    <!-- Debug builds deploy to %AppData%\Autodesk\Revit\Addins\<year>; release builds only publish to bin\publish -->
+    <PropertyGroup Condition="$(Configuration.Contains('Debug'))">
+        <DeployAddin>true</DeployAddin>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="$(Configuration.Contains('Release'))">
+        <PublishAddin>true</PublishAddin>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Nice3point.Revit.Api.RevitAPI"/>
+        <PackageReference Include="Nice3point.Revit.Api.RevitAPIUI"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Davydov.Revit.Addin\Davydov.Revit.Addin.csproj"/>
+    </ItemGroup>
+
+</Project>

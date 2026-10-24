@@ -1,0 +1,48 @@
+<Project Sdk="Nice3point.Revit.Sdk">
+
+    <!--
+        The add-in application (Nice3point "Revit AddIn Application"). Revit does not load this assembly
+        directly: Davydov.Revit.Addin.Launcher loads it into an isolated AssemblyLoadContext (plan, section 8).
+        The .addin manifest, DeployAddin and LaunchRevit live in the Launcher.
+    -->
+
+    <PropertyGroup>
+        <UseWPF>true</UseWPF>
+        <EnableDynamicLoading>true</EnableDynamicLoading>
+        <!-- ClientApp is an npm project: node_modules must not become MSBuild items; only its dist ships (below) -->
+        <DefaultItemExcludes>$(DefaultItemExcludes);ClientApp\**</DefaultItemExcludes>
+        <Configurations>Debug.R25;Debug.R26;Debug.R27</Configurations>
+        <Configurations>$(Configurations);Release.R25;Release.R26;Release.R27</Configurations>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Nice3point.Revit.Toolkit"/>
+        <PackageReference Include="Nice3point.Revit.Extensions"/>
+        <PackageReference Include="Nice3point.Revit.Api.RevitAPI"/>
+        <PackageReference Include="Nice3point.Revit.Api.RevitAPIUI"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting"/>
+        <PackageReference Include="JetBrains.Annotations" PrivateAssets="all"/>
+        <PackageReference Include="Polyfill" PrivateAssets="all"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="Davydov.Revit.Addin.Tests"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Embedded, not WPF resources: pack URIs resolve assemblies by name and could load a second copy outside the isolated context -->
+        <EmbeddedResource Include="Resources\Icons\*.png"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Davydov.Revit.Addin.ServiceDefaults\Davydov.Revit.Addin.ServiceDefaults.csproj"/>
+        <ProjectReference Include="..\Davydov.Revit.Hosting\Davydov.Revit.Hosting.csproj"/>
+        <ProjectReference Include="..\Davydov.Revit.Hosting.WebView\Davydov.Revit.Hosting.WebView.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- The built pages (npm run build in ClientApp), served over the virtual host in Release (plan, section 10) -->
+        <Content Include="ClientApp\dist\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest"/>
+    </ItemGroup>
+
+</Project>

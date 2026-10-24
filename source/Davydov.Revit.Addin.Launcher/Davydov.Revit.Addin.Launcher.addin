@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+    <AddIn Type="Application">
+        <Name>Davydov.Revit.Addin</Name>
+        <Assembly>Davydov.Revit.Addin.Launcher/Davydov.Revit.Addin.Launcher.dll</Assembly>
+        <AddInId>A2A3303D-540B-4C7D-9969-77C9FF461888</AddInId>
+        <FullClassName>Davydov.Revit.Addin.Launcher.App</FullClassName>
+        <VendorId>Davydov</VendorId>
+        <VendorDescription></VendorDescription>
+    </AddIn>
+</RevitAddIns>
