@@ -24,4 +24,8 @@
   <Project Path="source/Davydov.Revit.Addin.Launcher/Davydov.Revit.Addin.Launcher.csproj"/>
   <Project Path="source/Davydov.Revit.Addin.ServiceDefaults/Davydov.Revit.Addin.ServiceDefaults.csproj"/>
   <Project Path="source/Davydov.Revit.Addin/Davydov.Revit.Addin.csproj"/>
+  <Folder Name="/Tests/">
+    <Project Path="tests/Davydov.Revit.Addin.Tests/Davydov.Revit.Addin.Tests.csproj"/>
+    <Project Path="tests/Davydov.Revit.Hosting.Tests/Davydov.Revit.Hosting.Tests.csproj"/>
+  </Folder>
 </Solution>

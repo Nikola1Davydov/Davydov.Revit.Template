@@ -1,0 +1,29 @@
+<Project Sdk="Nice3point.Revit.Sdk">
+
+    <!--
+        Unit tests of Davydov.Revit.Hosting without Revit (plan, section 12): command registry, pipeline, model binding.
+        The Revit API packages hold reference assemblies only, so these tests must not touch types that use Revit API —
+        everything that does is tested inside Revit in Davydov.Revit.Addin.Tests.
+        No Polyfill package here: InternalsVisibleTo already exposes the module's polyfills, a second copy would be ambiguous.
+    -->
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <!-- The module references the x64 Revit API; without it Revit 2025 builds warn about the architecture mismatch -->
+        <PlatformTarget>x64</PlatformTarget>
+        <EnableTUnitPolyfills>false</EnableTUnitPolyfills>
+        <Configurations>Debug.R25;Debug.R26;Debug.R27</Configurations>
+        <Configurations>$(Configurations);Release.R25;Release.R26;Release.R27</Configurations>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="TUnit"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting"/>
+        <PackageReference Include="JetBrains.Annotations" PrivateAssets="all"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\source\Davydov.Revit.Hosting\Davydov.Revit.Hosting.csproj"/>
+    </ItemGroup>
+
+</Project>

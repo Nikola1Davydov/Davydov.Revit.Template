@@ -2,7 +2,7 @@ using System.Reflection;
 using Davydov.Revit.Hosting.Commands;
 using Davydov.Revit.Hosting.Commands.BuiltIn;
 using Davydov.Revit.Hosting.Pipeline;
-using Davydov.Revit.Hosting.Threading;
+using Davydov.Revit.Hosting.Notifications;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -35,7 +35,7 @@ public static class RevitCommandsRegistration
         /// </example>
         public TBuilder AddRevitCommands(Action<RevitCommandsBuilder> configure)
         {
-            if (builder.Services.All(service => service.ServiceType != typeof(IRevitDispatcher)))
+            if (builder.Services.All(service => service.ServiceType != typeof(IUserNotifier)))
             {
                 throw new InvalidOperationException("Call AddRevitHosting before AddRevitCommands: the pipeline reports ribbon failures through its user notifier.");
             }

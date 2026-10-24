@@ -59,3 +59,4 @@ Debug-сборка, для каждой версии Revit 2025, 2026, 2027:
 | 3 | Открыть два проекта; нажать «Active document» и сразу переключиться на другой проект | Окно ошибки «The active document has changed. Refresh the data and try again.»; в журнале — `refused: document_changed` |
 | 4 | Нажать «Active document» и сразу закрыть все документы | Окно ошибки «Open a document first.» (`no_document`) |
 | 5 | Нажать «Active document» и, не дожидаясь, пользоваться Revit | Revit не подвисает: команда ждёт в thread pool, в поток Revit заходит только на чтение |
+| 6 | Закрыть Revit; `dotnet test --project tests/Davydov.Revit.Addin.Tests -c Release.R26` (и R25, R27) | Revit запускается сам, все тесты проходят (`RevitDispatcherTests`, `ActiveDocumentTests`, `DocumentKeyTests`) |

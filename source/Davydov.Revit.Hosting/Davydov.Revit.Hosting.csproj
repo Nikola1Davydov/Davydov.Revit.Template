@@ -1,7 +1,7 @@
 <Project Sdk="Nice3point.Revit.Sdk">
 
     <!--
-        Our module (plan, section 3): command pipeline, documents, events, IRevitDispatcher, ribbon buttons.
+        Our module (plan, section 3): command pipeline, events, IRevitDispatcher, ribbon buttons.
         Headless: no UseWPF, no System.Windows (plan, section 3.1).
     -->
 
@@ -18,6 +18,11 @@
         <PackageReference Include="Microsoft.Extensions.Hosting"/>
         <PackageReference Include="JetBrains.Annotations" PrivateAssets="all"/>
         <PackageReference Include="Polyfill" PrivateAssets="all"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="Davydov.Revit.Hosting.Tests"/>
+        <InternalsVisibleTo Include="Davydov.Revit.Addin.Tests"/>
     </ItemGroup>
 
 </Project>

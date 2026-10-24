@@ -822,21 +822,32 @@ Nice3point (`global.json` → Microsoft.Testing.Platform).
 - **Unit-тесты без Revit** (`tests/Davydov.Revit.Hosting.Tests`): конвейер, middleware, model binding, реестр команд
   (правила имён, проверки `Build()`). Подменить `IRevitDispatcher` нельзя — в его сигнатурах `UIApplication`, а типы
   Revit вне Revit не загрузятся; поэтому без Revit тестируется только то, что Revit не трогает, а всё остальное — тестами
-  внутри Revit.
+  внутри Revit. В этом проекте нет пакета Polyfill: через `InternalsVisibleTo` видны полифилы модуля, вторая копия
+  дала бы неоднозначные вызовы (то же в `Davydov.Revit.Addin.Tests`).
+
+  ```
+  dotnet run --project tests/Davydov.Revit.Hosting.Tests -c Debug.R26   # Revit не нужен; так же на R25 и R27
+  ```
 - **Тесты внутри Revit** (`tests/Davydov.Revit.Addin.Tests`, Nice3point «Revit Test») —
   [Nice3point.TUnit.Revit](https://github.com/Nice3point/RevitUnit): тесты выполняются в контексте Revit API, DI —
   через `DependencyInjectionDataSourceAttribute`, как в `MultiProjectSolution`.
 
   ```csharp
-  public sealed class DispatcherTests : RevitApiTest          // каждый тест — в однопоточном контексте Revit API
+  public sealed class ActiveDocumentTests : RevitApiUiTest   // каждый тест — в потоке Revit, в контексте Revit API
   {
-      private Document _doc = null!;
-
-      [Before(Test)] public void Open()  => _doc = Application.NewProjectDocument(UnitSystem.Metric);
-      [After(Test)]  public void Close() => _doc.Close(false);
-
       [Test]
-      public async Task Dispatcher_reads_new_document() { /* … */ }
+      public async Task InvokeAsync_UserSwitchedDocumentsBetweenCalls_ThrowsDocumentChanged()
+      {
+          Activate(_pathA);
+          var activeDocument = new ActiveDocument(new RevitDispatcher());   // AllowDirectInvocation: работа идёт сразу
+          await activeDocument.InvokeAsync(document => document.Title);
+
+          Activate(_pathB);
+
+          var exception = await Assert.That(async () => { await activeDocument.InvokeAsync(d => d.Title); })
+              .Throws<CommandException>();
+          await Assert.That(exception!.Code).IsEqualTo(DocumentErrorCodes.DocumentChanged);
+      }
   }
   ```
 
@@ -889,6 +900,12 @@ Nice3point (`global.json` → Microsoft.Testing.Platform).
    Готово, когда: команда с DI и `TRequest` вызывается с ленты и проходит через middleware; смена документа посреди
    команды даёт `document_changed`; ошибка команды с ленты показывается через `IUserNotifier`; есть unit-тесты на
    конвейер и тесты внутри Revit (Nice3point.TUnit.Revit) на `IRevitDispatcher` и `ActiveDocument`.
+   **Сделано (код собран, проверка в Revit — `docs/manual-tests.md`, фаза 3):** всё перечисленное; `AddRevitCommands`
+   требует `IUserNotifier` из `AddRevitHosting`. Тесты: `Davydov.Revit.Hosting.Tests` — 28 тестов без Revit (имена,
+   проверки регистрации, model binding, ошибки, порядок middleware и заголовки, `SingleFlight`, отмена,
+   `ICommandSender`, `Host.GetCommands`), проходят на R25–R27; `Davydov.Revit.Addin.Tests` — диспетчер,
+   `ActiveDocument` с двумя документами, ключ документа, `DocumentCheckMiddleware` — собраны, но не запускались
+   (на машине сборки нет Revit).
 4. **События** — `AddRevitEvents`: `RevitEventSource`, события приложения (включая `DocumentClosed` с заголовком и путём),
    синхронные обработчики, `RevitUpdater`, debounce.
    Готово, когда: смена документа и правка модели доходят до `IAppEventHandler`, апдейтер срабатывает,

@@ -24,6 +24,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="Davydov.Revit.Addin.Tests"/>
+    </ItemGroup>
+
+    <ItemGroup>
         <!-- Embedded, not WPF resources: pack URIs resolve assemblies by name and could load a second copy outside the isolated context -->
         <EmbeddedResource Include="Resources\Icons\*.png"/>
     </ItemGroup>
