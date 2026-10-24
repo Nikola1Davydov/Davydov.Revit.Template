@@ -54,9 +54,29 @@ Debug-сборка, для каждой версии Revit 2025, 2026, 2027:
 
 | # | Шаг | Ожидается |
 | --- | --- | --- |
-| 1 | Запустить Revit, открыть журнал | Строка `Registered 2 commands: CheckActiveDocument, Host.GetCommands` |
+| 1 | Запустить Revit, открыть журнал | Строка `Registered 4 commands: CheckActiveDocument, CountElementsByCategory, GetActiveDocument, Host.GetCommands` |
 | 2 | Открыть проект, нажать «Active document» (панель Dev), ничего не трогать 5 с | Окно: название, ключ (путь файла или заголовок несохранённого), число элементов; в журнале — `Command CheckActiveDocument (ribbon) succeeded in ~5000 ms` |
 | 3 | Открыть два проекта; нажать «Active document» и сразу переключиться на другой проект | Окно ошибки «The active document has changed. Refresh the data and try again.»; в журнале — `refused: document_changed` |
 | 4 | Нажать «Active document» и сразу закрыть все документы | Окно ошибки «Open a document first.» (`no_document`) |
 | 5 | Нажать «Active document» и, не дожидаясь, пользоваться Revit | Revit не подвисает: команда ждёт в thread pool, в поток Revit заходит только на чтение |
 | 6 | Закрыть Revit; `dotnet test --project tests/Davydov.Revit.Addin.Tests -c Release.R26` (и R25, R27) | Revit запускается сам, все тесты проходят (`RevitDispatcherTests`, `ActiveDocumentTests`, `DocumentKeyTests`) |
+
+## Фаза 4 — WebView
+
+Подготовка: `npm install` в `source/Davydov.Revit.Hosting.WebView/revit-bridge` и в `source/Davydov.Revit.Addin/ClientApp`.
+Debug-сборка грузит dev-сервер: перед запуском Revit — `npm run dev` в `ClientApp`. Для проверки Release-варианта —
+`npm run build` и в `appsettings.Development.json` `"ClientApp": { "UseDevServer": false }`.
+
+| # | Шаг | Ожидается |
+| --- | --- | --- |
+| 1 | Открыть проект, нажать «Sample page» | Окно поверх Revit со страницей: название документа, кнопка «Count elements» |
+| 2 | Нажать «Sample page» ещё раз | То же окно выходит на передний план, второго окна нет |
+| 3 | Нажать «Count elements» в большом проекте | Полоса прогресса с «N / M», затем таблица категорий; Revit во время подсчёта отвечает |
+| 4 | Нажать «Count elements» и сразу «Cancel» | Подсчёт останавливается, в журнале — `canceled` |
+| 5 | Открыть второй проект, переключиться на него, нажать «Count elements» в окне | Ответ `document_changed`, страница сама показывает название нового документа; повторное нажатие считает его |
+| 6 | Нажать «Palette» | Док-панель рядом с браузером проекта, страница с заголовком «Palette»; перезапуск Revit — панель на месте |
+| 7 | Закрыть окно посреди подсчёта | Revit не падает; в журнале нет ошибок отправки |
+| 8 | В Debug: F12 в окне | Открываются DevTools; в Release DevTools и контекстное меню выключены |
+| 9 | В консоли DevTools: `location.href = "https://example.com"` | Без защиты — сайт открывается в окне. С `w.RestrictNavigation()` в `Host.cs` — переход отменён, адрес открылся в системном браузере |
+| 10 | Удалить WebView2 Runtime (или проверить на машине без него) и открыть «Sample page» | В окне сообщение со ссылкой на установку вместо пустого окна |
+

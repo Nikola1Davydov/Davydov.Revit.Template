@@ -20,6 +20,7 @@
   </Folder>
   <Folder Name="/Modules/">
     <Project Path="source/Davydov.Revit.Hosting/Davydov.Revit.Hosting.csproj"/>
+    <Project Path="source/Davydov.Revit.Hosting.WebView/Davydov.Revit.Hosting.WebView.csproj"/>
   </Folder>
   <Project Path="source/Davydov.Revit.Addin.Launcher/Davydov.Revit.Addin.Launcher.csproj"/>
   <Project Path="source/Davydov.Revit.Addin.ServiceDefaults/Davydov.Revit.Addin.ServiceDefaults.csproj"/>

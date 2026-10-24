@@ -5,6 +5,8 @@ namespace Davydov.Revit.Addin.Launcher.Proxies;
 // One line per ribbon button and per availability class (plan, section 8).
 // The proxy name must match the add-in class name; the add-in checks this at startup.
 
+[Transaction(TransactionMode.Manual)] public sealed class SamplePageCommand : ProxyCommand;
+[Transaction(TransactionMode.Manual)] public sealed class PaletteCommand : ProxyCommand;
 [Transaction(TransactionMode.Manual)] public sealed class StatusCommand : ProxyCommand;
 [Transaction(TransactionMode.Manual)] public sealed class ActiveDocumentCommand : ProxyCommand;
 [Transaction(TransactionMode.Manual)] public sealed class UserSettingsCommand : ProxyCommand;

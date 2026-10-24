@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "clientapp",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "source/Davydov.Revit.Addin/ClientApp"],
+      "port": 5173
+    }
+  ]
+}

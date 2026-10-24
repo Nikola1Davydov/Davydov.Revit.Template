@@ -56,6 +56,36 @@ public sealed class ActiveDocument(IRevitDispatcher dispatcher)
         return dispatcher.InvokeAsync(application => work(Resolve(application)), cancellationToken);
     }
 
+    /// <summary>
+    ///     Runs <paramref name="work" /> over <paramref name="items" /> in batches, one Revit call per batch: between batches
+    ///     Revit gets control back, so the page shows progress and the user can cancel (plan, section 5.5).
+    /// </summary>
+    /// <remarks>
+    ///     Every batch checks the document like any access. Writing in batches means one transaction — one undo step — per
+    ///     batch; reading in batches costs nothing.
+    /// </remarks>
+    /// <inheritdoc cref="InvokeAsync{T}(Func{Document,T},CancellationToken)" path="/exception" />
+    public async Task InvokeBatchedAsync<TItem>(
+        IReadOnlyList<TItem> items,
+        int batchSize,
+        Action<Document, IReadOnlyList<TItem>> work,
+        IProgress<ProgressInfo>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(batchSize, 1);
+
+        for (var start = 0; start < items.Count; start += batchSize)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var batch = items.Skip(start).Take(batchSize).ToList();
+            await InvokeAsync(document => work(document, batch), cancellationToken).ConfigureAwait(false);
+
+            var done = Math.Min(start + batchSize, items.Count);
+            progress?.Report(new ProgressInfo((double)done / items.Count, $"{done} / {items.Count}"));
+        }
+    }
+
     /// <summary>Fixes the document of this call before the first access; used by <see cref="DocumentCheckMiddleware" />.</summary>
     internal void Expect(string key)
     {

@@ -24,6 +24,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\source\Davydov.Revit.Hosting\Davydov.Revit.Hosting.csproj"/>
+        <ProjectReference Include="..\..\source\Davydov.Revit.Hosting.WebView\Davydov.Revit.Hosting.WebView.csproj"/>
     </ItemGroup>
 
 </Project>

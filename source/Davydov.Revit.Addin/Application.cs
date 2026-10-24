@@ -33,6 +33,12 @@ public class Application : AsyncExternalApplication
     {
         var panel = Application.CreatePanel("General", "Davydov.Revit.Addin");
 
+        panel.AddButton<SamplePageCommand>("Sample\npage")
+            .WithIcons("RibbonIcon");
+
+        panel.AddButton<PaletteCommand>("Palette")
+            .WithIcons("RibbonIcon");
+
         panel.AddButton<StatusCommand>("Status")
             .WithIcons("RibbonIcon");
 

@@ -23,6 +23,9 @@
         <!-- One version for every Revit version; the Launcher's AssemblyLoadContext isolates it (decision 26) -->
         <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.12"/>
 
+        <!-- WebView2 for Davydov.Revit.Hosting.WebView; loads in the Launcher's AssemblyLoadContext like everything else -->
+        <PackageVersion Include="Microsoft.Web.WebView2" Version="1.0.4258.31"/>
+
         <!-- Tests: TUnit on Microsoft.Testing.Platform (global.json), as in Nice3point MultiProjectSolution -->
         <PackageVersion Include="TUnit" Version="1.73.19"/>
 

@@ -53,6 +53,10 @@ public static partial class Host
             .UseCommandLogging()
             .Use<DocumentCheckMiddleware>());
 
+        //Davydov.Revit.Hosting.WebView: windows and the dock pane with the ClientApp pages (plan, section 9)
+        builder.AddWebView(application, webView => webView
+            .DockPane(new Guid("CA1A2580-51FE-4199-A6B5-62760DC2D3CC"), "Davydov.Revit.Addin", "/dock"));
+
 #if DEBUG
         builder.Services.AddHostedService<StartupProbe>();
         builder.Services.Configure<DevOptions>(builder.Configuration.GetSection(DevOptions.SectionName));
