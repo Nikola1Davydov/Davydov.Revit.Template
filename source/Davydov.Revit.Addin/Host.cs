@@ -1,6 +1,12 @@
+using System.Diagnostics;
 using System.Reflection;
+using Autodesk.Revit.UI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+#if DEBUG
+using Davydov.Revit.Addin.Diagnostics;
+#endif
 using Path = System.IO.Path;
 
 namespace Davydov.Revit.Addin;
@@ -8,16 +14,19 @@ namespace Davydov.Revit.Addin;
 /// <summary>
 ///     Provides a host for the application's services and manages their lifetimes.
 /// </summary>
-public static class Host
+public static partial class Host
 {
     private static IHost? _host;
 
     /// <summary>
     ///     Registers the add-in services and starts the host.
     /// </summary>
+    /// <param name="application">The application Revit passed to the add-in at startup.</param>
     /// <returns>A task that represents the asynchronous host startup operation.</returns>
-    public static async Task StartAsync()
+    public static async Task StartAsync(UIControlledApplication application)
     {
+        var stopwatch = Stopwatch.StartNew();
+
         var builder = new HostApplicationBuilder(new HostApplicationBuilderSettings
         {
             ApplicationName = "Davydov.Revit.Addin",
@@ -33,8 +42,18 @@ public static class Host
         //Service defaults
         builder.AddServiceDefaults();
 
+        //Davydov.Revit.Hosting: dispatcher, Revit lifetime, notifications. Before the first await — see AddRevitHosting
+        builder.AddRevitHosting(application);
+
+#if DEBUG
+        builder.Services.AddHostedService<StartupProbe>();
+        builder.Services.Configure<DevOptions>(builder.Configuration.GetSection(DevOptions.SectionName));
+#endif
+
         _host = builder.Build();
         await _host.StartAsync();
+
+        LogHostStarted(_host.Services.GetRequiredService<ILogger<Application>>(), stopwatch.ElapsedMilliseconds);
     }
 
     /// <summary>
@@ -65,4 +84,7 @@ public static class Host
     {
         return _host!.Services.GetRequiredService<T>();
     }
+
+    [LoggerMessage(LogLevel.Information, "Host started in {ElapsedMilliseconds} ms")]
+    private static partial void LogHostStarted(ILogger logger, long elapsedMilliseconds);
 }

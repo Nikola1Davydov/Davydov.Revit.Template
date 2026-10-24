@@ -2,6 +2,8 @@ using System.Runtime.Loader;
 using System.Text;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.UI;
+using Davydov.Revit.Hosting.Lifetime;
+using Davydov.Revit.Hosting.Settings;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -22,10 +24,14 @@ public partial class StatusCommand : ExternalCommand
     {
         var logger = Host.GetService<ILogger<StatusCommand>>();
         var environment = Host.GetService<IHostEnvironment>();
+        var revitLifetime = Host.GetService<IRevitLifetime>();
+        var userSettings = Host.GetService<IUserSettings>();
 
         var report = new StringBuilder()
             .AppendLine($"Revit: {Application.Application.VersionNumber} ({Application.Application.VersionBuild})")
             .AppendLine($"Environment: {environment.EnvironmentName}")
+            .AppendLine($"Revit initialized: {revitLifetime.IsInitialized}")
+            .AppendLine($"User settings: {userSettings.FilePath}")
             .AppendLine($"Load context: {DescribeContext(typeof(StatusCommand))}")
             .AppendLine($"Microsoft.Extensions.DependencyInjection: {DescribeAssembly(typeof(ServiceProvider))}")
             .AppendLine($"Microsoft.Extensions.Hosting: {DescribeAssembly(typeof(HostApplicationBuilder))}")

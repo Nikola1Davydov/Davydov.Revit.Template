@@ -175,7 +175,7 @@ Davydov.Revit.Addin/
 | --- | --- | --- |
 | `Davydov.Revit.Hosting` | Revit API (только компиляция), Nice3point.Revit.Toolkit, Microsoft.Extensions.* | **headless**: без `UseWPF`, `System.Windows`, `MessageBox` |
 | `Davydov.Revit.Hosting.WebView` | Hosting, WebView2, Toolkit | единственное место WPF и диалогов наших модулей |
-| `Davydov.Revit.Addin.ServiceDefaults` | Toolkit, Nice3point.Revit.Logging, Microsoft.Extensions.Hosting, Serilog (файловый лог, решение 23) | как в Nice3point |
+| `Davydov.Revit.Addin.ServiceDefaults` | Toolkit, Nice3point.Revit.Logging, Microsoft.Extensions.Hosting, Serilog (файловый лог, решение 23), Davydov.Revit.Hosting (`AddUserSettings`) | как в Nice3point |
 | `Davydov.Revit.Addin.Launcher` | только Revit API; на приложение — **только** ради порядка сборки и `deps.json` | в коде Launcher нельзя использовать типы приложения и модулей: они загрузились бы в default ALC в обход изоляции |
 | `Davydov.Revit.Addin` (приложение) | всё перечисленное, Nice3point.Revit.Extensions | в `Features/`, `Services/`, `EventHandlers/` — без `System.Windows` (UI — через `IUserNotifier` и фронтенд) и без `ActiveUIDocument` (раздел 7) |
 | `tests/*` | что тестируют | — |
@@ -801,7 +801,7 @@ return <FamiliesTable data={families.data} onRename={r => rename.mutate(r)} />; 
   1. `appsettings.json` рядом с DLL — значения по умолчанию, только чтение;
   2. `appsettings.{Environment}.json` — `Development` в Debug (например, адрес dev-сервера и подробные логи);
   3. `%AppData%\<Tool>\<RevitVersion>\usersettings.json` — то, что пользователь поменял в интерфейсе;
-  4. переменные окружения `MYTOOL_…` — для отладки.
+  4. переменные окружения с префиксом из имени плагина (`DAVYDOV_REVIT_ADDIN_…`) — для отладки.
 - **Чтение** — обычные `IOptions<T>` / `IOptionsMonitor<T>` (`reloadOnChange` для пользовательского файла).
 - **Запись** — `IUserSettings` (модуль `Davydov.Revit.Hosting`): `await settings.UpdateAsync<AiOptions>("Ai", o => o.Model = "…")`
   пишет секцию в `usersettings.json`, `IOptionsMonitor` подхватывает изменение. Так переносятся `mcp.json` и
@@ -875,6 +875,14 @@ Nice3point (`global.json` → Microsoft.Testing.Platform).
    Готово, когда: сервис из DI читает документ через `IRevitDispatcher` после `IRevitLifetime.Initialized`;
    `BackgroundService` с обычным `await` не вешает запуск Revit; настройка, записанная через `IUserSettings`,
    переживает перезапуск Revit; измерено время старта хоста.
+   **Сделано (код собран, проверка в Revit — `docs/manual-tests.md`, фаза 2):** `builder.AddRevitHosting(application)`
+   регистрирует `IRevitDispatcher` (поверх `AsyncRequestExternalEvent` с `AllowDirectInvocation`), `IRevitLifetime` и
+   `IUserNotifier` (TaskDialog через диспетчер); диспетчер и подписка на `ApplicationInitialized` создаются прямо в
+   `AddRevitHosting` — внутри `OnStartup`, до первого `await`. ServiceDefaults добавляет слои конфигурации
+   (`AddConfigurationDefaults`) и `IUserSettings` (`AddUserSettings`, запись через временный файл). `Host` пишет время
+   старта в журнал. В Debug: `StartupProbe` (ждёт `Initialized`, читает модель через диспетчер) и кнопка «User settings».
+   **Перенесено в фазу 3:** перегрузки `IRevitDispatcher` с `DocumentRef` и `InvokeBatchedAsync` (нужен реестр
+   документов), `ICommandSender` (нужен конвейер). Секреты через DPAPI — когда понадобятся (MCP / AI-провайдеры).
 3. **Команды** — `AddRevitCommands` (reflection-регистрация и проверки `Build()`, раздел 5.3), встроенные
    `Host.*`-команды, конвейер с встроенными middleware (раздел 5.4), запуск конвейера в thread pool,
    `IDocumentRegistry`, `DocumentBinding`, `context.Document`, Debug-панель «Dev».

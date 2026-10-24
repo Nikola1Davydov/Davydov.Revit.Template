@@ -15,6 +15,7 @@
         <PackageReference Include="Nice3point.Revit.Extensions"/>
         <PackageReference Include="Nice3point.Revit.Api.RevitAPI"/>
         <PackageReference Include="Nice3point.Revit.Api.RevitAPIUI"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting"/>
         <PackageReference Include="JetBrains.Annotations" PrivateAssets="all"/>
         <PackageReference Include="Polyfill" PrivateAssets="all"/>
     </ItemGroup>

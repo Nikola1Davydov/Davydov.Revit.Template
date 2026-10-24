@@ -19,7 +19,7 @@ public class Application : AsyncExternalApplication
     /// <inheritdoc />
     public override async Task OnStartupAsync()
     {
-        await Host.StartAsync();
+        await Host.StartAsync(Application);
         CreateRibbon();
     }
 
@@ -41,6 +41,9 @@ public class Application : AsyncExternalApplication
 
         devPanel.AddButton<ActiveDocumentCommand>("Active\ndocument")
             .SetAvailability<DocumentAvailability>()
+            .WithIcons("RibbonIcon");
+
+        devPanel.AddButton<UserSettingsCommand>("User\nsettings")
             .WithIcons("RibbonIcon");
 #endif
     }

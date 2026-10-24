@@ -14,4 +14,8 @@
         <PackageReference Include="Polyfill" PrivateAssets="all"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\Davydov.Revit.Hosting\Davydov.Revit.Hosting.csproj"/>
+    </ItemGroup>
+
 </Project>

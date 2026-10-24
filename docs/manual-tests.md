@@ -34,3 +34,16 @@
 | 9 | Отладка: запустить Launcher-проект из IDE (`LaunchRevit`), поставить точку останова в `StatusCommand.Execute`, нажать кнопку | Остановка в точке; проверить, работают ли Hot Reload / Edit and Continue в изолированном контексте — записать результат в CLAUDE.md шаблона |
 
 После шагов 7–8 вернуть код обратно.
+
+## Фаза 2 — основа модуля Davydov.Revit.Hosting
+
+Debug-сборка, для каждой версии Revit 2025, 2026, 2027:
+
+| # | Шаг | Ожидается |
+| --- | --- | --- |
+| 1 | Запустить Revit | Revit запускается без задержки и зависания (в Debug при старте работает `StartupProbe` с обычными `await`) |
+| 2 | Открыть журнал Revit | Строки `Host started in N ms` (записать N для каждой версии) и `Revit <год> initialized; open documents: 0` |
+| 3 | Нажать «Status» | `Revit initialized: True`, путь `User settings: %AppData%\Davydov.Revit.Addin\<год>\usersettings.json` |
+| 4 | Нажать «User settings» (панель Dev) 2–3 раза | Окно `Clicks: 1`, `2`, `3`; в `usersettings.json` — `"Dev": { "ClickCount": 3 }` |
+| 5 | Перезапустить Revit, нажать «User settings» | `Clicks: 4` — настройка пережила перезапуск |
+| 6 | Положить рядом с плагином `appsettings.json` с `{ "Dev": { "ClickCount": 100 } }`, удалить `usersettings.json`, перезапустить, нажать «User settings» | `Clicks: 101` — значение из `appsettings.json`, пользовательский файл поверх него |

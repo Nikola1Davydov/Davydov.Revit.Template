@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Davydov.Revit.Addin.ServiceDefaults.Configuration;
 using Davydov.Revit.Addin.ServiceDefaults.Logging;
 using Davydov.Revit.Addin.ServiceDefaults.Serialization;
 
@@ -16,12 +17,14 @@ public static class ServiceDefaultsRegistration
     extension<TBuilder>(TBuilder builder) where TBuilder : IHostApplicationBuilder
     {
         /// <summary>
-        ///     Adds the shared logging, diagnostics, serialization and container defaults to the specified <see cref="IHostApplicationBuilder" />.
+        ///     Adds the shared logging, configuration, diagnostics, serialization and container defaults to the specified <see cref="IHostApplicationBuilder" />.
         /// </summary>
         /// <returns>The <typeparamref name="TBuilder" /> for chaining.</returns>
         public TBuilder AddServiceDefaults()
         {
+            // Logging first: its in-memory defaults must be the lowest configuration layer, below appsettings.json
             builder.AddLoggingDefaults();
+            builder.AddConfigurationDefaults();
             builder.ConfigureJsonSerializer();
             builder.ConfigureContainerValidation();
 
