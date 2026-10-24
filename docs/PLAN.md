@@ -17,7 +17,7 @@
 | `ILogger<T>` | то же, Serilog как провайдер |
 | Kestrel (`IServer`) | транспорты: WebView2, позже MCP (`ITransport`) |
 | Middleware (`app.Use…`) | конвейер команд (раздел 5.4) |
-| Controllers + `AddControllers()` / `MapControllers()` | классы команд + один вызов `builder.Services.AddCommands()` |
+| Controllers + `AddControllers()` / `MapControllers()` | классы команд + один вызов `builder.Services.AddCommands()` (reflection-скан сборки, как в AnalyseTool) |
 | Minimal API `app.MapGet(...)` | пока нет — только классы (решение 10) |
 | Model binding | payload автоматически → `TRequest` |
 | `IHostedService` | фоновые сервисы со стартом/остановкой в OnStartup/OnShutdown |
@@ -29,7 +29,7 @@
 ### Как это выглядит
 
 ```csharp
-// Program.cs
+// Program.cs — Hosting находит Program.Build через reflection (раздел 8)
 public static class Program
 {
     public static RevitApp Build(UIControlledApplication revit)
@@ -38,20 +38,24 @@ public static class Program
 
         builder.Services.AddSingleton<IFamiliesService, FamiliesService>();
         builder.Services.Configure<AiOptions>(builder.Configuration.GetSection("Ai"));
-        builder.Services.AddCommands();          // сгенерирован source generator'ом: все команды сборки, сразу открыты транспортам
-        builder.Services.AddRevitEvents();       // обработчики событий Revit, см. раздел 6
-        builder.Services.AddWebView2Transport();
+        builder.Services.AddCommands();          // reflection: все ICommand<…> сборки → DI + реестр (раздел 5.3)
+        builder.Services.AddRevitEvents();       // reflection: обработчики событий Revit (раздел 6)
+        builder.Services.AddWebView2(o => o.DockPane("Палитра", "/families-dock"));
 
-        RevitApp app = builder.Build();
+        RevitApp app = builder.Build();          // проверка DI и имён команд — ошибка здесь, а не при клике
 
         app.UseExceptionHandling();              // порядок и полный список middleware — раздел 5.4
         app.UseCommandLogging();
         app.ForwardToClient<ActiveDocumentChanged>();
 
-        app.Ribbon("MyTool", tab => tab          // лента — раздел 8
-            .Panel("Семейства")
-                .Button("Семейства", window: "/families", document: DocumentBinding.Pinned)
-                .Button("Очистить",  command: "PurgeFamilies"));
+        app.Ribbon(ribbon =>                     // лента — раздел 8: кнопка = метод
+        {
+            var families = ribbon.Panel("MyTool", "Семейства");
+            families.AddButton("Семейства", icon: "families.png",
+                click: b => b.OpenWindow("/families", o => o.Pinned = true));
+            families.AddButton("Очистить", icon: "purge.png", id: "PurgeFamilies",
+                click: b => b.Send<PurgeFamilies>()).RequiresProject();
+        });
         return app;
     }
 }
@@ -73,6 +77,7 @@ public sealed class RenameFamily(IRevitDispatcher revit, ILogger<RenameFamily> l
 | В AnalyseTool | В шаблоне |
 | --- | --- |
 | статический `CoreServices` (service locator) | DI-контейнер |
+| `RegisterBuiltIns`: reflection-скан `IRevitTask`, конфликт имён — запись в лог | тот же reflection-скан `ICommand<…>`, но в DI; конфликт и прочие ошибки — при `Build()` (раздел 5.3) |
 | `Activator.CreateInstance` для команд | scope на запрос, внедрение через конструктор |
 | `Payload.As<T>()` + `InputType` в атрибуте | `ICommand<TRequest,TResponse>` — схема берётся из `TRequest` |
 | `CommandRequest.Gate` | middleware в конвейере |
@@ -80,11 +85,11 @@ public sealed class RenameFamily(IRevitDispatcher revit, ILogger<RenameFamily> l
 | `mcp.json` и свои файлы настроек | `IConfiguration` + `IOptions<T>` + `IUserSettings` для записи (раздел 11) |
 | `XxxController.Initialize(...)` в bootstrap | `IHostedService` |
 | `IProgressAware` (внедрение через свойство) | `context.Progress` |
-| Launcher ищет `RibbonHost` по FQN-строкам и вызывает методы по именам-строкам | одна сгенерированная точка входа + пул слотов для кнопок (раздел 8) |
-| по классу `IExternalCommand` в Launcher на каждую кнопку, написанному руками | пул одинаковых слотов, кнопки описываются в `Program.cs` (раздел 8) |
+| Launcher ищет `RibbonHost` (класс приложения) по FQN-строке и вызывает методы по именам-строкам | один reflection-вызов класса **фреймворка** `RevitEntry.Start`, дальше — делегаты (раздел 8) |
+| два механизма кнопок: статические — официальный API, по рукописному классу `IExternalCommand` в Launcher на кнопку, внутрь — по имени метода-строке; кнопки расширений — неофициальный AdWindows API (`RelayCommand`, без классов, клик через второй `ExternalEvent` в `RibbonEventHub`) | один механизм: кнопка — метод в `Program.cs`; в Launcher — неизменный файл слотов из шаблона (раздел 8) |
 | статический `DocumentTracker`, второй `ExternalEvent` в `RibbonEventHub`, трюки с `Idling` в `DockPaneHost`, ручной `SendEvent` в док-панели | один механизм событий (раздел 6) |
 | команды берут `ActiveUIDocument` в момент вызова | документ — часть запроса, `context.Document` (раздел 7) |
-| создание окружения WebView2 (`UserDataFolder`) повторено в 5 окнах; нет защиты навигации | одно место в Hosting.Wpf + allowlist навигации (раздел 9) |
+| окна-копии `FamilyControlWindow`, `SettingsWindow`, … (отличаются заголовком, размером, маршрутом); окружение WebView2 создаётся в каждом; нет защиты навигации | один `WebViewWindow` + `b.OpenWindow(route)`, одно окружение, allowlist навигации (раздел 9) |
 
 Оставляем без изменений (проверено в бою):
 - Launcher + изолированный `AssemblyLoadContext` — без него Microsoft.Extensions.* конфликтуют с другими плагинами.
@@ -109,11 +114,11 @@ Davydov.Revit.Template/
 │  │  ├─ Events/         RevitEventSource, IAppEventHandler<>, IRevitEventHandler<>, RevitUpdater, IClientEvents
 │  │  ├─ Documents/      IDocumentRegistry, DocumentKey, DocumentRef, middleware DocumentBinding
 │  │  ├─ Threading/      IRevitDispatcher (ExternalEvent)
-│  │  ├─ Ribbon/         описание ленты, таблица слотов (без WPF — только данные)
+│  │  ├─ Ribbon/         описание ленты, ButtonContext, раздача слотов (без WPF — только данные)
+│  │  ├─ Entry/          RevitEntry — единственная точка входа из Launcher
 │  │  ├─ Settings/       IUserSettings
 │  │  └─ Transports/     ITransport, IUserNotifier (абстракция)
-│  ├─ Davydov.Revit.Hosting.Generators/   source generator + анализаторы (netstandard2.0), раздел 5.3
-│  ├─ Davydov.Revit.Hosting.Wpf/          WebView2: окружение, окна, док-панель, транспорт; построение ленты; IUserNotifier
+│  ├─ Davydov.Revit.Hosting.Wpf/          WebView2: окружение, WebViewWindow, док-панель, транспорт; построение ленты; IUserNotifier
 │  ├─ Davydov.Revit.Template/              само приложение (аналог проекта WebApplication)
 │  │  ├─ Program.cs
 │  │  ├─ appsettings.json
@@ -122,8 +127,8 @@ Davydov.Revit.Template/
 │  │  ├─ Services/
 │  │  ├─ Models/
 │  │  └─ ClientApp/      React + Vite (раздел 10)
-│  └─ Davydov.Revit.Template.Launcher/    тонкий IExternalApplication + ALC + пул слотов
-├─ tests/                Hosting.Tests (без Revit), Generators.Tests (снимки + диагностики), ClientApp — Vitest
+│  └─ Davydov.Revit.Template.Launcher/    App.cs (ALC + вызов RevitEntry) + RibbonSlots.cs — пишутся шаблоном, не меняются
+├─ tests/                Hosting.Tests (без Revit), ClientApp — Vitest
 ├─ build/                NUKE
 ├─ CLAUDE.md             инструкции для ИИ-ассистентов (фаза 7 — копия попадает в каждый новый проект)
 ├─ Directory.Build.props, Directory.Packages.props
@@ -135,9 +140,8 @@ Davydov.Revit.Template/
 | Проект | Ссылается на | Правила |
 | --- | --- | --- |
 | `Hosting` | Revit API (только компиляция), Microsoft.Extensions.* | **headless**: без `UseWPF`, `System.Windows`, `MessageBox`. Наши проекты — ни одного |
-| `Hosting.Generators` | только `Microsoft.CodeAnalysis.*` (netstandard2.0) | не ссылается на Hosting: работает по именам типов из метаданных |
 | `Hosting.Wpf` | Hosting, WebView2 | единственное место WPF и диалогов |
-| приложение | Hosting, Hosting.Wpf, Generators (как анализатор) | в `Commands/`, `Services/`, `EventHandlers/` — без `System.Windows` (UI — только через `IUserNotifier` и фронтенд) |
+| приложение | Hosting, Hosting.Wpf | в `Commands/`, `Services/`, `EventHandlers/` — без `System.Windows` (UI — только через `IUserNotifier` и фронтенд) и без `ActiveUIDocument` (раздел 7) |
 | `Launcher` | приложение — **только** ради порядка сборки и `deps.json` | в коде Launcher нельзя использовать типы приложения/Hosting: они загрузились бы в default ALC в обход изоляции |
 | `tests/*` | что тестируют | — |
 
@@ -192,6 +196,17 @@ public interface IRevitDispatcher
 public delegate Task<object?> CommandDelegate(CommandContext context);
 public interface ICommandMiddleware { Task<object?> InvokeAsync(CommandContext context, CommandDelegate next); }
 
+// Кнопка ленты = метод (раздел 8)
+public sealed class ButtonContext
+{
+    public UIApplication UiApp { get; }                    // клик приходит в валидном контексте API
+    public IServiceProvider Services { get; }              // DI-scope на этот клик
+    public void Send<TCommand>(object? payload = null);    // в конвейер, без ожидания; документ — активный
+    public void OpenWindow(string route, Action<WebViewWindowOptions>? configure = null);
+    public void ShowDockPane(string route);
+    public void OpenLink(string url);
+}
+
 // Уведомление пользователя (реализация — Hosting.Wpf: TaskDialog / toast во фронтенде)
 public interface IUserNotifier { void Error(string title, string message); void Info(string title, string message); }
 ```
@@ -224,73 +239,34 @@ public interface IUserNotifier { void Error(string title, string message); void 
 - Сравнение без учёта регистра.
 - Встроенные команды Hosting имеют префикс `Host.` (`Host.GetOpenDocuments`, `Host.PickFolder`, `Host.OpenExternalLink`).
   Точка в имени допустима **только** у встроенных команд, поэтому с командами приложения они не пересекаются.
-- Конфликт имён внутри сборки — **ошибка компиляции** (`DRT001`); между сборками (приложение + Hosting) —
-  **ошибка при `Build()`** с указанием обоих классов. Не тихий пропуск с записью в лог, как в AnalyseTool.
+- Конфликт имён (в том числе между приложением и `Host.*`) — **ошибка при `Build()`** с указанием обоих классов,
+  а не тихий пропуск с записью в лог, как в AnalyseTool.
 - Защита от переименований — генерация TS-типов из команд (фаза 7): переименовал класс → фронтенд не скомпилируется.
 
-### 5.3. Регистрация — source generator, без reflection
+### 5.3. Регистрация — reflection, как в AnalyseTool (решение 15)
 
-Команды и обработчики событий находит **source generator** при компиляции (в VS — прямо при наборе кода).
-Reflection-сканирования нет вообще.
+- `AddCommands()` сканирует сборку приложения (ту, где лежит `Program`), как `CommandDispatcher.RegisterBuiltIns`
+  в AnalyseTool: не абстрактные классы с `ICommand<TResponse>` / `ICommand<TRequest, TResponse>` → DI (scoped) +
+  реестр с именем и метаданными. `AddRevitEvents()` — то же для `IAppEventHandler<T>` / `IRevitEventHandler<TArgs>`.
+- Встроенные `Host.*`-команды Hosting и Hosting.Wpf регистрируются тем же сканом их сборок, автоматически.
+- `SafeGetTypes`: при `ReflectionTypeLoadException` берём загрузившиеся типы, остальное — в лог с именем
+  недостающей зависимости (урок AnalyseTool).
+- Правила имён (раздел 5.2) живут в одном месте — `CommandNaming` в Hosting.
+- **Проверки при `Build()`** — до первого клика, с понятным текстом; при ошибке — запасная панель (раздел 8):
 
-- Проект `Davydov.Revit.Hosting.Generators` (netstandard2.0, `IIncrementalGenerator`), подключается к приложению
-  (и к Hosting / Hosting.Wpf — для их встроенных команд) как анализатор:
-  `<ProjectReference … OutputItemType="Analyzer" ReferenceOutputAssembly="false" />`.
-  Версия `Microsoft.CodeAnalysis.CSharp` — минимальная из поддерживаемых VS/SDK, закрепляется в CPM.
-- Генератор находит не абстрактные классы, реализующие `ICommand<TResponse>` / `ICommand<TRequest, TResponse>`,
-  `IAppEventHandler<T>`, `IRevitEventHandler<TArgs>`, и применяет правила имён (раздел 5.2). **Правила имён живут
-  только в генераторе.**
-- Генерирует в сборку приложения:
-  - методы `AddCommands()` и `AddRevitEvents()` — Hosting их не объявляет. Не подключил генератор → `Program.cs`
-    не компилируется, а не «плагин загрузился, команд нет»;
-  - **точку входа** `Davydov.Revit.Generated.AppEntry` — по найденному `Program.Build(UIControlledApplication)`.
-    Launcher ищет только это одно имя (раздел 8). Для Hosting/Hosting.Wpf генерируется внутренний
-    `AddHostingCommands()`, который builder вызывает сам.
-
-  ```csharp
-  // <auto-generated/> obj/…/CommandRegistration.g.cs
-  namespace MyTool;
-
-  internal static class GeneratedCommandRegistration
-  {
-      public static IServiceCollection AddCommands(this IServiceCollection services)
-      {
-          services.AddScoped<global::MyTool.Commands.Families.RenameFamily>();
-          services.AddCommandDescriptor(new CommandDescriptor(
-              Name: "RenameFamily",
-              CommandType: typeof(global::MyTool.Commands.Families.RenameFamily),
-              RequestType: typeof(global::MyTool.Commands.Families.RenameFamilyRequest),
-              ResponseType: typeof(global::MyTool.Commands.Families.RenameFamilyResult),
-              Metadata: new CommandMetadata(Description: "Переименовывает семейство"),
-              Invoke: static async (sp, payload, context, json) =>      // прямой вызов, без reflection
-              {
-                  var command = sp.GetRequiredService<global::MyTool.Commands.Families.RenameFamily>();
-                  var request = payload.Deserialize<global::MyTool.Commands.Families.RenameFamilyRequest>(json)!;
-                  return await command.ExecuteAsync(request, context);
-              }));
-          // … остальные команды
-          return services;
-      }
-  }
-  ```
-
-- Диагностики (красное подчёркивание в редакторе, ошибка сборки):
-
-  | Код | Что ловит |
+  | Проверка | Пример сообщения |
   | --- | --- |
-  | `DRT001` | два класса дают одно имя команды — указывает оба |
-  | `DRT002` | `TRequest` — интерфейс/абстрактный класс, STJ не сможет создать |
-  | `DRT003` | класс реализует несколько `ICommand<…>` сразу |
-  | `DRT004` | нет `Program.Build(UIControlledApplication)` или у него другая сигнатура — точку входа не сгенерировать |
-  | `DRT005` | точка в имени команды приложения (зарезервирована за `Host.*`) |
-  | `DRT010` | `UIApplication.ActiveUIDocument` где угодно в сборке приложения — использовать `context.Document` (раздел 7). Исключение — явный `[AllowActiveDocument("причина")]` на классе или методе |
+  | одинаковые имена команд | «"GetFamilies" объявлена дважды: MyTool.Commands.Families.GetFamilies и MyTool.Commands.Library.GetFamiliesCommand» |
+  | `TRequest` — интерфейс или абстрактный класс | «RenameFamilyRequest: System.Text.Json не сможет создать абстрактный тип» |
+  | класс реализует несколько `ICommand<…>` | «PurgeFamilies реализует ICommand дважды» |
+  | точка в имени команды приложения | «точка зарезервирована за Host.*» |
+  | незарегистрированные зависимости | `ValidateOnBuild`: «IFamiliesService не зарегистрирован (нужен GetFamilies)» |
 
-- Команды только для отладки — обычный `#if DEBUG` вокруг класса: генератор видит символы препроцессора, в Release
-  команды просто нет.
-- Что генератор проверить не может — зарегистрированы ли в DI зависимости из конструкторов и конфликты имён между
-  сборками. Это проверяет `Build()` (`ValidateOnBuild` + проверка реестра).
-- Тесты генератора — снимки сгенерированного кода (Verify.SourceGenerators) + тест на каждую диагностику.
-- Сгенерированный код виден в VS: Dependencies → Analyzers; в `obj/` — с `EmitCompilerGeneratedFiles=true` в Debug.
+- Вызов: при регистрации для каждой команды один раз собирается типизированный делегат вызова, поэтому reflection не
+  выполняется на каждый вызов (хотя и на каждый вызов это было бы незаметно на фоне Revit API).
+- Команды только для отладки — обычный `#if DEBUG` вокруг класса.
+- `ActiveUIDocument` в `Commands/`, `Services/`, `EventHandlers/` запрещён — проверяет скрипт в CI (раздел 7).
+  Roslyn-анализатор с подсветкой в редакторе можно добавить позже, ничего не меняя в командах.
 
 ### 5.4. Конвейер middleware
 
@@ -369,7 +345,7 @@ public sealed record ModelChanged(
 ### Регистрация
 
 ```csharp
-builder.Services.AddRevitEvents();                 // сгенерирован: все IAppEventHandler<> / IRevitEventHandler<> сборки
+builder.Services.AddRevitEvents();                 // reflection: все IAppEventHandler<> / IRevitEventHandler<> сборки
 builder.Services.Configure<RevitEventOptions>(o =>
 {
     o.Debounce<SelectionChanged>(TimeSpan.FromMilliseconds(150));
@@ -441,7 +417,8 @@ Revit-событие (поток Revit)
 
 Правила:
 - Подписка только в OnStartup — в обработчике WPF `Loaded` Revit бросает исключение (урок `DockPaneHost`).
-- На «горячие» `DocumentChanged` и `SelectionChanged` подписываемся, только если есть хоть один обработчик или пересылка.
+- На «горячие» `DocumentChanged` и `SelectionChanged` подписываемся, только если есть хоть один обработчик или пересылка
+  (это известно после скана `AddRevitEvents`).
 - Ни одно исключение из обработчика не уходит в Revit: ловится и логируется; ошибка одного обработчика не мешает остальным.
 - В OnShutdown всё отписывается, апдейтеры снимаются.
 
@@ -495,9 +472,10 @@ Revit-событие (поток Revit)
 
    Изменять модель можно и в неактивном документе (Revit API это позволяет, и пользователь смотрел именно на данные A).
    Действия с интерфейсом — только в активном, иначе отказ.
-6. **Защита при компиляции:** анализатор `DRT010` (раздел 5.3) запрещает `UIApplication.ActiveUIDocument` во всей
-   сборке приложения, в том числе внутри `InvokeAsync(Func<UIApplication, T>)` — эта перегрузка для действий уровня
-   приложения, а не для обхода привязки. Исключение — только явный `[AllowActiveDocument("причина")]`.
+6. **Защита в CI:** скрипт (рядом с `Check-Boundaries.ps1`) запрещает `ActiveUIDocument` в `Commands/`, `Services/`
+   и `EventHandlers/`, в том числе внутри `InvokeAsync(Func<UIApplication, T>)` — эта перегрузка для действий уровня
+   приложения, а не для обхода привязки. Исключение — строка с комментарием `// AllowActiveDocument: причина`.
+   В методах кнопок (раздел 8) активный документ использовать можно: клик и относится к нему.
 
 ### Фронтенд: каждое окно знает свой документ
 
@@ -516,7 +494,7 @@ Revit-событие (поток Revit)
 - `refetchOn: ["ModelChanged"]` реагирует только на события своего документа.
 - Привязанное окно показывает документ в заголовке; пришёл `DocumentClosed` с его ключом — плашка «Документ закрыт»,
   кнопки неактивны.
-- На ленте: `.Button("Семейства", window: "/families", document: DocumentBinding.Pinned)`.
+- С ленты: `b.OpenWindow("/families", o => o.Pinned = true)` (раздел 8).
 
 ### Сценарии
 
@@ -530,45 +508,126 @@ Revit-событие (поток Revit)
 | Вызов с ленты или из MCP без документа | активный на момент вызова, зафиксирован |
 | Выделить элементы в неактивном документе | отказ: «Документ не активен» |
 
-## 8. Лента и вход из Revit
+## 8. Лента и вход из Revit (решение 15)
 
 **Ограничение Revit:** кнопка ленты указывает на класс `IExternalCommand` по имени типа и пути к DLL, и Revit
 создаёт его сам — в default ALC. Наш код живёт в изолированном ALC, Revit его там не видит. Поэтому классы для кнопок
-обязаны лежать в Launcher и перенаправлять вызов внутрь ALC (так и сделано в AnalyseTool, но каждой кнопке там
-отвечает свой рукописный класс, а внутрь вызов уходит по имени метода-строке).
+обязаны лежать в Launcher и перенаправлять вызов внутрь ALC. В AnalyseTool так сделаны статические кнопки: каждой
+отвечает свой рукописный класс в Launcher, который через reflection находит настоящий `IExternalCommand` в App
+(`AnalyseToolCommand`) или вызывает метод `RibbonHost` по имени-строке. Кнопки расширений AnalyseTool обходят
+ограничение через неофициальный AdWindows API — без классов `IExternalCommand` вообще.
 
 ### Вход
 
 ```
 Revit → Launcher.App.OnStartup
-  1. создаёт изолированный ALC, загружает сборку приложения
-  2. reflection — ОДИН раз, по одному имени: Davydov.Revit.Generated.AppEntry.Start(...)
-     (тип генерирует генератор, DRT004 гарантирует, что он есть; нет — TaskDialog, а не пустая лента)
-  3. Start вызывает Program.Build, запускает host, строит ленту и возвращает таблицу делегатов
-     (Func<int, UIApplication, Result> для слотов и т.п.)
-  4. дальше Launcher вызывает только эти делегаты — без строк и reflection
+  1. изолированный ALC, загрузка сборки приложения — как LoadIsolatedDlls в AnalyseTool
+  2. reflection — ОДИН раз: Davydov.Revit.Hosting.RevitEntry.Start(revit, launcherPath, appAssembly)
+     строка указывает на класс фреймворка, а не приложения: при рефакторинге приложения она не ломается
+  3. RevitEntry находит Program.Build (reflection, по сигнатуре) и вызывает его;
+     запускает хост, регистрирует док-панель, строит ленту
+  4. возвращает делегаты: Click(slot, uiApp), IsAvailable(slot, uiApp, categories), Stop
+     (в сигнатурах только типы .NET и Revit API — они общие для обоих ALC)
+  ошибка на любом шаге → запасная панель «Ошибка загрузки — открыть лог», без ALC (урок BugsCommand)
 ```
 
-Делегаты свободно пересекают границу ALC: в их сигнатурах только типы .NET и Revit API, а они общие.
+### Слоты — неизменный файл в Launcher
 
-### Кнопки — пул слотов
+`Execute` у `IExternalCommand` не сообщает, какую кнопку нажали, поэтому у каждой кнопки должен быть свой класс.
+Они берутся из файла пронумерованных слотов. Он пишется один раз в шаблоне и не меняется при добавлении кнопок:
 
-- В Launcher — фиксированный пул одинаковых классов `Slot00 … Slot63 : IExternalCommand`. Каждый просто вызывает
-  делегат со своим номером: `Slot07.Execute → invokeSlot(7, uiApp)`.
-- `app.Ribbon(...)` в `Program.cs` описывает вкладки, панели и кнопки; Hosting раздаёт кнопкам слоты по порядку.
-  Кнопок больше, чем слотов, → ошибка при `Build()` с понятным текстом (пул расширяется одной строкой в Launcher).
-- Доступность кнопок — небольшой фиксированный набор `IExternalCommandAvailability` в Launcher: `Always`,
-  `RequiresDocument`, `RequiresProject`; кнопка выбирает его в описании (`.RequiresProject()`).
-- Кнопка делает одно из двух: открывает окно (`window: "/families"` + режим follow/pinned) или вызывает команду
-  (`command: "PurgeFamilies"`, `Source = "ribbon"`, ошибки — через `IUserNotifier`).
-- В Debug — панель «Dev» с кнопками для проверки команд до появления UI (фазы 3–4, раздел 12).
-- Слоты против описания кнопок атрибутами, чтобы генератор создавал ровно нужные классы, — вопрос E.
+```csharp
+// Launcher/RibbonSlots.cs
+public abstract class Slot(int n) : IExternalCommand
+{
+    public Result Execute(ExternalCommandData data, ref string message, ElementSet elements) =>
+        SlotHost.Click(n, data.Application);                  // → метод кнопки внутри ALC
+}
+
+public abstract class SlotAvailability(int n) : IExternalCommandAvailability
+{
+    public bool IsCommandAvailable(UIApplication app, CategorySet selected) =>
+        SlotHost.IsAvailable(n, app, selected);
+}
+
+[Transaction(TransactionMode.Manual)] public sealed class Slot00() : Slot(0);
+public sealed class Slot00Availability() : SlotAvailability(0);
+// … до Slot31
+```
+
+### Кнопки — методы в `Program.cs`
+
+```csharp
+app.Ribbon(ribbon =>
+{
+    var families = ribbon.Panel("MyTool", "Семейства");
+
+    families.AddButton("Семейства", icon: "families.png",
+        click: b => b.OpenWindow("/families", o => { o.Width = 1100; o.Height = 720; o.Pinned = true; }));
+
+    families.AddButton("Очистить", icon: "purge.png", id: "PurgeFamilies",
+        click: b => b.Send<PurgeFamilies>())
+        .RequiresProject();
+
+    families.AddButton("Отчёт", icon: "report.png", click: ShowReport);   // обычный метод
+
+    var manage = ribbon.Panel("MyTool", "Управление");
+    manage.AddStacked(s => s
+        .Button("Настройки", click: b => b.OpenWindow("/settings"))
+        .Button("Сообщить об ошибке", click: b => b.OpenLink("https://github.com/…/issues")));
+});
+
+if (app.Environment.IsDevelopment())
+    app.Ribbon(ribbon => ribbon.Panel("MyTool", "Dev").AddButton("Ping", click: b => b.Send<Ping>()));
+
+static void ShowReport(ButtonContext b)
+{
+    IFamiliesService families = b.Services.GetRequiredService<IFamiliesService>();
+    // …
+}
+```
+
+Новая кнопка — **одна строка** в `Program.cs`. Ни класса в приложении, ни строки в Launcher.
+Поддерживаются обычные кнопки, `AddStacked` (2–3 маленькие кнопки), `AddPulldown`, `AddSplit`. Иконки — PNG из
+`Resources/Icons/` приложения (pack URI, как в AnalyseTool) или глифы Segoe MDL2 (`BuildGlyphIcon` из `RibbonHost`).
+
+### Правила
+
+- **Стабильный id кнопки.** По внутреннему имени Revit привязывает горячие клавиши, панель быстрого доступа и
+  `PostCommand`. По умолчанию имя — `"Панель.Текст"`; для кнопок, которые вызывают с клавиатуры, задаётся явный
+  `id:`, чтобы смена текста не сбрасывала привязки пользователя. Номер слота на имя не влияет.
+- **Слоты раздаются по порядку.** Кнопок больше 32 → ошибка при `Build()`: «добавь строки в Launcher/RibbonSlots.cs».
+  В лог при старте — таблица «Slot07 = MyTool.PurgeFamilies», чтобы `Slot07` в стеке вызовов было с чем сопоставить.
+- **Клик** приходит в валидном контексте API, метод кнопки выполняется в потоке Revit синхронно — он должен быть
+  быстрым. Долгую работу метод отдаёт команде через `b.Send<T>()`: вызов уходит в конвейер (`Source = "ribbon"`,
+  документ — активный на момент клика, раздел 7) **без ожидания**. Ждать нельзя: команда сама пойдёт через
+  `ExternalEvent` и ждала бы событие, внутри которого стоит клик (урок `InvokeSavedCommand` из AnalyseTool).
+  Ошибки — через `IUserNotifier`.
+- **Окна.** `b.OpenWindow(route)` открывает общий `WebViewWindow` (раздел 9); второй клик поднимает уже открытое окно
+  этого маршрута (и документа, если `Pinned`), как `_familyWindow` / `Restore` в `RibbonHost`.
+- **Доступность.** `.RequiresDocument()`, `.RequiresProject()`, свои условия — `.AvailableWhen(ctx => ctx.Selection.Count > 0)`.
+  Revit опрашивает доступность очень часто: условие обязано быть быстрым, исключение в нём ловится и считается
+  «недоступно».
+- **Изменения во время работы** — через официальный API, который позволяет менять уже созданные кнопки (`Visible`,
+  `Enabled`, `ItemText`, `ToolTip`, `Image`): `.VisibleWhen<AiOptions>(o => o.Enabled)` пересчитывается при смене
+  настроек. Добавлять новые кнопки после старта нельзя — все кнопки известны в `Program.cs`.
+- **Контекстные меню Revit** (`IContextMenuCreator`) тоже требуют классы `IExternalCommand` — используют те же слоты.
+
+### Почему не AdWindows
+
+AdWindows (как у кнопок расширений AnalyseTool) не требует классов, но для Revit такая кнопка — просто элемент
+интерфейса: нет горячих клавиш, `PostCommand` и журналов, доступность — вручную, API недокументирован и может
+измениться. В AnalyseTool он был нужен ради расширений, которые появляются на лету; расширений нет (решение 12).
 
 ## 9. WebView2: окружение и безопасность
 
 - **Одно окружение на плагин** (`WebViewEnvironmentProvider` в Hosting.Wpf): проверка наличия runtime
   (`GetAvailableBrowserVersionString`; нет — понятное сообщение со ссылкой на установку), `UserDataFolder` в
   `%LOCALAPPDATA%\<Tool>\WebView2` (папка Revit недоступна для записи). В AnalyseTool это повторено в пяти окнах.
+- **Одно окно на все случаи — `WebViewWindow`.** В AnalyseTool `FamilyControlWindow`, `SettingsWindow`, … — копии
+  одного класса (~30 строк), отличаются заголовком, размером и маршрутом. В шаблоне это один класс с опциями
+  (`Title`, `Width`, `Height`, `Pinned`): `Owner` = главное окно Revit, общее окружение, транспорт `Attach`/`Detach`,
+  переход на маршрут, одно окно на маршрут и документ. Особое поведение — опциями, в крайнем случае наследованием.
 - **Контент:** Release — `SetVirtualHostNameToFolderMapping("app.<tool>.local", dist)`; Debug — dev-сервер Vite
   (`ClientApp:DevServerUrl` в настройках, по умолчанию `http://localhost:5173`).
 - **Безопасность.** Любая страница, загруженная в WebView, может вызывать команды через `postMessage` — значит,
@@ -638,7 +697,7 @@ return <FamiliesTable data={families.data} onRename={r => rename.mutate(r)} />;
 - **Unit-тесты без Revit** (`tests/Hosting.Tests`): конвейер, middleware, model binding, логика `DocumentBinding`,
   реестр команд — с фейковыми `IRevitDispatcher` / `IDocumentRegistry`. Типы Revit (`Document`, `ElementId`, …) вне
   Revit создать нельзя, поэтому логика, которую хотим тестировать, не трогает их напрямую.
-- **Генератор** — снимки и диагностики (раздел 5.3).
+- **Реестр команд** — правила имён и проверки `Build()` (раздел 5.3) на тестовой сборке с командами-примерами.
 - **Фронтенд** — Vitest (раздел 10).
 - **Внутри Revit:** библиотека для интеграционных тестов (например, ricaun.RevitTest) или ручной чек-лист —
   вопрос G.
@@ -650,37 +709,38 @@ return <FamiliesTable data={families.data} onRename={r => rename.mutate(r)} />;
 
 ## 13. Фазы
 
-0. **Решения** — открытые вопросы закрываются до фазы, которой они нужны: E (лента) — до фазы 1, A — до фазы 2,
-   B, C, D, G — до фазы 3, F — до фазы 5.
+0. **Решения** — открытые вопросы закрываются до фазы, которой они нужны: A — до фазы 2,
+   B, C, D, G — до фазы 3, F — до фазы 5. (E — закрыт: решение 14, затем 15.)
 1. **Скелет** — решение, props, конфигурации R25–R27, CPM (версии Microsoft.Extensions.* по TFM), Launcher + ALC,
-   проект генератора с точкой входа `AppEntry` и `DRT004`, пул слотов, автодеплой, базовый Serilog,
-   проверка Hot Reload.
-   Готово, когда: в Revit появляется кнопка на ленте (через слот) и пишет в лог.
+   `RibbonSlots.cs`, `RevitEntry.Start` (находит `Program.Build` через reflection), запасная панель «Ошибка загрузки»,
+   автодеплой, базовый Serilog, проверка Hot Reload.
+   Готово, когда: в Revit появляется кнопка на ленте (через слот) и пишет в лог; если `Program.Build` бросает
+   исключение — появляется запасная панель с кнопкой открытия лога.
 2. **Hosting** — builder (вопрос A), DI, конфигурация и `IUserSettings`, логирование, `IRevitDispatcher`
-   (все перегрузки, включая `InvokeBatchedAsync`), жизненный цикл hosted-сервисов, `IUserNotifier`, описание ленты.
+   (все перегрузки, включая `InvokeBatchedAsync`), жизненный цикл hosted-сервисов, `IUserNotifier`, описание ленты
+   и `ButtonContext`.
    Готово, когда: сервис из DI читает документ через `IRevitDispatcher`; настройка, записанная через
    `IUserSettings`, переживает перезапуск Revit.
-3. **Команды** — генератор (`AddCommands`, `DRT001–005`, `DRT010`), проверки `Build()` (DI, конфликты между
-   сборками), встроенные `Host.*`-команды, конвейер с встроенными middleware (раздел 5.4), запуск конвейера в thread
+3. **Команды** — reflection-регистрация (`AddCommands`) и проверки `Build()` (раздел 5.3), встроенные `Host.*`-команды, конвейер с встроенными middleware (раздел 5.4), запуск конвейера в thread
    pool, `IDocumentRegistry`, `DocumentBinding`, `context.Document`, Debug-панель «Dev».
    Готово, когда: команда с DI и `TRequest` вызывается с ленты и проходит через middleware; команда с документом A
    выполняется в A при активном B; ошибка команды с ленты показывается через `IUserNotifier`; есть unit-тесты на
    конвейер.
 4. **События** — `RevitEventSource`, события приложения (включая `DocumentClosed` с ключом), синхронные обработчики
-   (регистрирует тот же генератор — `AddRevitEvents`), `RevitUpdater`, debounce, `IHostApplicationLifetime`.
+   (`AddRevitEvents`, тот же reflection-скан), `RevitUpdater`, debounce, `IHostApplicationLifetime`.
    Готово, когда: смена документа и правка модели доходят до `IAppEventHandler`, апдейтер срабатывает,
    исключение в обработчике не роняет Revit.
-5. **UI** — окружение WebView2 и защита навигации (раздел 9), окно и док-панель, транспорт, `revit-bridge` (TS),
+5. **UI** — окружение WebView2 и защита навигации (раздел 9), `WebViewWindow` и док-панель, транспорт, `revit-bridge` (TS),
    React ClientApp, Vite HMR в Debug, `ForwardToClient` / `useRevitEvent` / `refetchOn`, `RevitDocumentProvider`
    (follow/pinned), shadcn/ui + своя `<DataTable>` (сортировка, фильтры, выделение, виртуальный скролл).
    Готово, когда: кнопка в React вызывает команду и показывает результат и прогресс (на `InvokeBatchedAsync`);
    при смене документа док-панель сама обновляется, а привязанное окно остаётся на своём документе; переход по
    внешней ссылке открывает системный браузер.
-6. **Сборка и выпуск** — NUKE, инсталлятор, CI: проверка границ по таблице 3.1, сборка R25 (net8) и R27 (net10),
-   тесты Hosting и генератора, сборка и lint фронтенда.
+6. **Сборка и выпуск** — NUKE, инсталлятор, CI: проверка границ по таблице 3.1 и запрета `ActiveUIDocument`
+   (раздел 7), сборка R25 (net8) и R27 (net10), тесты Hosting, сборка и lint фронтенда.
 7. **Шаблон** — `.template.config`, `dotnet new davydov-revit -n MyTool`, параметры; CLAUDE.md для новых проектов
-   (правила документов, команд, событий, потоков); генерация TS-типов (отдельная утилита после сборки через
-   `MetadataLoadContext` — source generator не может писать файлы в `ClientApp/`).
+   (правила документов, команд, событий, потоков, ленты); генерация TS-типов (отдельная утилита после сборки
+   читает команды из DLL через `MetadataLoadContext` и пишет `ClientApp/src/generated/commands.ts`).
 8. **Опционально** — MCP, Roslyn-скрипты (переносятся из AnalyseTool как модули `AddMcp()` и т.п.).
    Системы сторонних расширений нет (решение 12).
 
@@ -693,16 +753,13 @@ return <FamiliesTable data={families.data} onRename={r => rename.mutate(r)} />;
   lifetime пишем сами. Рекомендация — (а).
 - **B. Команды без входа / без результата.** (а) Как сейчас: `ICommand<TResponse>` + `ICommand<TRequest, TResponse>`,
   «нет результата» — `Empty`. (б) Один интерфейс `ICommand<TRequest, TResponse>`, «нет входа» — тоже `Empty`:
-  ровно один способ, генератору проще, но `ICommand<Empty, …>` многословнее. Рекомендация — (б).
+  ровно один способ, реестру проще, но `ICommand<Empty, …>` многословнее. Рекомендация — (б).
 - **C. `DocumentBinding` неявно или явно.** (а) Всегда включён, builder ставит его сам сразу после
   `ExceptionHandling` — забыть нельзя. (б) Явный `app.UseDocumentBinding()`, как `UseRouting` в ASP.NET Core.
   Рекомендация — (а).
 - **D. `ConfirmDestructive` — для каких источников.** (а) Только для MCP и будущих удалённых транспортов: в UI
   подтверждение и так делает сам интерфейс. (б) Для всех источников, включая WebView2 и ленту. Рекомендация — (а);
   до фазы 8 (MCP) слой тогда фактически не нужен.
-- **E. Кнопки ленты.** (а) Пул слотов в Launcher, кнопки описываются в `Program.cs` (раздел 8). (б) Кнопки
-  описываются атрибутами на командах/окнах, генератор создаёт ровно нужные классы-слоты в Launcher — без пула, но
-  ленту нельзя собрать динамически. Рекомендация — (а).
 - **F. Деревья во фронтенде:** своя `<TreeView>` или сторонняя библиотека? (фаза 5)
 - **G. Тесты внутри Revit:** библиотека интеграционных тестов (например, ricaun.RevitTest — тесты NUnit запускаются
   в живом Revit) или только ручной чек-лист + Debug-панель «Dev»?
@@ -723,4 +780,6 @@ return <FamiliesTable data={families.data} onRename={r => rename.mutate(r)} />;
 | 10 | Один способ: команды и обработчики событий — только классы. Регистрация — один вызов `AddCommands()` (без `MapCommands`), проверки при `Build()`. Делегаты в стиле Minimal API (`MapCommand`, `app.On<T>`) — не делаем, пока не понадобятся. | 2026-10-24 |
 | 11 | Компоненты — shadcn/ui + Tailwind 4 (не PrimeReact). Таблица — своя `<DataTable>` на TanStack Table + Virtual, собирается один раз в шаблоне. | 2026-10-24 |
 | 12 | Системы сторонних расширений (загрузка чужих DLL, SDK-пакет, collectible ALC) нет — ни в базе, ни опционально. Hosting остаётся одним проектом, без отдельного Abstractions. | 2026-10-24 |
-| 13 | Регистрация команд и обработчиков событий — source generator с фазы 3, без reflection. Генератор сам пишет `AddCommands()`/`AddRevitEvents()`, ловит ошибки при компиляции (`DRT001–005`), анализатор `DRT010` запрещает `ActiveUIDocument`. DI проверяется при `Build()`. | 2026-10-24 |
+| 13 | ~~Регистрация команд и обработчиков событий — source generator с фазы 3, без reflection. Генератор сам пишет `AddCommands()`/`AddRevitEvents()`, ловит ошибки при компиляции (`DRT001–005`), анализатор `DRT010` запрещает `ActiveUIDocument`. DI проверяется при `Build()`.~~ Отменено решением 15. | 2026-10-24 |
+| 14 | Кнопки ленты — пул слотов в Launcher, вся лента описывается в `Program.cs`, внутреннее имя кнопки стабильное и не зависит от слота. ~~Генерация пула по `[assembly: RibbonSlotPool(64)]`, `.Command<T>()`~~ — уточнено решением 15. | 2026-10-24 |
+| 15 | Как в AnalyseTool, без генератора: команды и обработчики событий регистрируются reflection-сканом сборки (`AddCommands`/`AddRevitEvents`) в DI, ошибки — при `Build()`. Launcher вызывает через reflection один класс фреймворка `RevitEntry.Start`, тот находит `Program.Build`. Кнопка ленты — метод в `Program.cs` (`AddButton(..., click: b => …)` с `ButtonContext`); в Launcher — неизменный рукописный файл `RibbonSlots.cs` (32 слота). Окна — один общий `WebViewWindow`. | 2026-10-24 |
