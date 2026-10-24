@@ -2,7 +2,7 @@
 
 Стартовый проект для новых Revit-плагинов. Основа — структура и инструменты **Nice3point** (Revit Templates, SDK,
 Toolkit, ServiceDefaults, ModularPipelines, WixSharp, TUnit). Поверх неё — **наши модули**, перенесённые из опыта
-AnalyseTool: WebView2-интерфейс, конвейер команд в стиле ASP.NET Core, события Revit.
+AnalyseTool: WebView2-интерфейс и конвейер команд в стиле ASP.NET Core.
 
 > Статус: черновик, обсуждается. Решения фиксируются в разделе «Решения», выбор, который ещё не сделан, —
 > в «Открытых вопросах» (буквы — ссылки на них по тексту). Эталон структуры — `samples/MultiProjectSolution`
@@ -15,7 +15,7 @@ AnalyseTool: WebView2-интерфейс, конвейер команд в ст�
 | Часть | Откуда | Что даёт |
 | --- | --- | --- |
 | **Основа** | Nice3point | `Nice3point.Revit.Sdk` (конфигурации `Debug.R25…Release.R27`, TFM, `DeployAddin`, `LaunchRevit`), `Nice3point.Revit.Toolkit` (external events, док-панели, базовые классы приложения и команд), `Nice3point.Revit.Extensions` (лента), `Host.cs` + `ServiceDefaults` (Generic Host, логирование в журнал Revit), ModularPipelines (сборка), WixSharp (установщик), TUnit + `Nice3point.TUnit.Revit` (тесты) |
-| **Наши модули** | AnalyseTool + этот план | `Davydov.Revit.Hosting` — конвейер команд, события, `IRevitDispatcher`, настройки, кнопки ленты (правило документа — в приложении, раздел 7); `Davydov.Revit.Hosting.WebView` — WebView2-окна и док-панель, мост к React; `Davydov.Revit.Addin.Launcher` — изоляция зависимостей на всех версиях Revit (решение 26) |
+| **Наши модули** | AnalyseTool + этот план | `Davydov.Revit.Hosting` — конвейер команд, `IRevitDispatcher`, жизненный цикл Revit, настройки, кнопки ленты (документ и подписка на события — в приложении, разделы 6, 7); `Davydov.Revit.Hosting.WebView` — WebView2-окна и док-панель, мост к React; `Davydov.Revit.Addin.Launcher` — изоляция зависимостей на всех версиях Revit (решение 26) |
 
 Наши модули подключаются так же, как у Nice3point подключается `AddServiceDefaults()` — методами-расширениями
 `IHostApplicationBuilder`, в стиле ASP.NET Core / .NET Aspire:
@@ -79,10 +79,9 @@ public static class Host
             .FromAssemblyOf<Application>()                     // наше: команды и конвейер (раздел 5)
             .UseCommandLogging()
             .Use<DocumentCheckMiddleware>());
-        builder.AddRevitEvents();                              // наше: события Revit (раздел 6)
         builder.AddWebView(w => w
-            .DockPane("Палитра", "/families-dock")            // наше: WebView2, мост, окна (раздел 9)
-            .ForwardToClient<ActiveDocumentChanged>());
+            .DockPane("Палитра", "/families-dock"));          // наше: WebView2, мост, окна (раздел 9)
+        builder.Services.AddSingleton<ActiveDocumentEvents>(); // подписка на события Revit — в приложении (раздел 6)
 
         builder.Services.AddSingleton<IFamiliesService, FamiliesService>();
 
@@ -124,7 +123,7 @@ public sealed class RenameFamily(ActiveDocument document, ILogger<RenameFamily> 
 | `CommandRequest.Gate` | **наше:** middleware в конвейере |
 | `mcp.json` и свои файлы настроек | `IConfiguration` + `IOptions<T>` + `IUserSettings` для записи (раздел 11) |
 | `IProgressAware` (внедрение через свойство) | **наше:** `context.Progress` |
-| статический `DocumentTracker`, трюки с `Idling` в `DockPaneHost`, ручной `SendEvent` в док-панели | **наше:** один механизм событий (раздел 6); док-панель — `DockablePaneProvider` из Toolkit |
+| статический `DocumentTracker`, трюки с `Idling` в `DockPaneHost`, ручной `SendEvent` в док-панели | **наше:** плагин подписывается на события Revit сам, по правилам раздела 6, и публикует во фронтенд через `IClientEvents`; док-панель — `DockablePaneProvider` из Toolkit |
 | команды берут `ActiveUIDocument` в момент вызова | **наше:** сервис приложения `ActiveDocument` — активный документ, зафиксированный на всю команду; сменился — понятная ошибка (раздел 7) |
 | окна-копии `FamilyControlWindow`, `SettingsWindow`, …; окружение WebView2 в каждом; нет защиты навигации | **наше:** один `WebViewWindow`, одно окружение, allowlist навигации (раздел 9) |
 
@@ -147,12 +146,12 @@ Davydov.Revit.Addin/
 │  │  ├─ Commands/                         кнопки ленты — ExternalCommand (как у Nice3point)
 │  │  ├─ Features/<Срез>/                  команды конвейера (ICommand), их сервисы и модели (как срезы AnalyseTool)
 │  │  ├─ Services/Documents/               ActiveDocument + DocumentCheckMiddleware — правило документа (раздел 7)
-│  │  ├─ EventHandlers/                    обработчики событий и апдейтеры
+│  │  ├─ EventHandlers/                    подписки на события Revit и IUpdater (раздел 6)
 │  │  ├─ Resources/Icons/
 │  │  ├─ appsettings.json
 │  │  └─ ClientApp/                        минимальный React + Vite (раздел 10)
 │  ├─ Davydov.Revit.Addin.ServiceDefaults/              Nice3point: логирование, диагностика, сериализация (+ наши слои конфигурации)
-│  ├─ Davydov.Revit.Hosting/               НАШ модуль, headless: команды, конвейер, события, IRevitDispatcher, IUserSettings
+│  ├─ Davydov.Revit.Hosting/               НАШ модуль, headless: команды, конвейер, IRevitDispatcher, IRevitLifetime, IUserSettings
 │  ├─ Davydov.Revit.Hosting.WebView/       НАШ модуль, WPF: окружение WebView2, WebViewWindow, док-панель, транспорт, revit-bridge (TS)
 │  └─ Davydov.Revit.Addin.Launcher/                     все версии Revit: Davydov.Revit.Addin.Launcher.addin, App.cs (свой ALC), Proxies.cs, Fallback/ (решение 26)
 ├─ tests/
@@ -162,7 +161,7 @@ Davydov.Revit.Addin/
 ├─ global.json                             SDK 10, Microsoft.Testing.Platform
 ├─ Davydov.Revit.Addin.slnx                             конфигурации Debug.R25 … Release.R27
 ├─ Directory.Packages.props                CPM — наше отклонение от Nice3point (решение 22); CentralPackageFloatingVersionsEnabled=true
-├─ CLAUDE.md                               инструкции для ИИ-ассистентов (фаза 7)
+├─ CLAUDE.md                               инструкции для ИИ-ассистентов (фаза 6)
 └─ .template.config/                       template.json (свой dotnet new, решение 24)
 ```
 
@@ -319,7 +318,7 @@ public interface IRevitLifetime
   изоляция — свой ALC через Launcher на всех версиях Revit (решение 26). Версии собраны в одном месте —
   `Directory.Packages.props`; плавающие версии пакетов Nice3point (`$(RevitVersion).*`) требуют
   `CentralPackageFloatingVersionsEnabled=true`.
-- Следствие: `JsonSchemaExporter` (MCP-схемы, фаза 8) доступен на всех версиях Revit.
+- Следствие: `JsonSchemaExporter` (MCP-схемы, фаза 7) доступен на всех версиях Revit.
 - Newtonsoft допустим только если его требует сторонняя библиотека, и только внутри её обёртки.
 
 ### 5.2. Имена команд
@@ -332,14 +331,13 @@ public interface IRevitLifetime
   Точка в имени допустима **только** у встроенных команд, поэтому с командами приложения они не пересекаются.
 - Конфликт имён (в том числе между приложением и `Host.*`) — **ошибка при `Build()`** с указанием обоих классов,
   а не тихий пропуск с записью в лог, как в AnalyseTool.
-- Защита от переименований — генерация TS-типов из команд (фаза 7): переименовал класс → фронтенд не скомпилируется.
+- Защита от переименований — генерация TS-типов из команд (фаза 6): переименовал класс → фронтенд не скомпилируется.
 
 ### 5.3. Регистрация — reflection, как в AnalyseTool (решение 15)
 
 - `builder.AddRevitCommands(c => c.FromAssemblyOf<Application>())` сканирует указанные сборки (приложение и, если есть,
   проекты-модули фич), как `CommandDispatcher.RegisterBuiltIns` в AnalyseTool: не абстрактные классы с
   `ICommand<TResponse>` / `ICommand<TRequest, TResponse>` → DI (scoped) + реестр с именем и описанием.
-  `AddRevitEvents()` — то же для `IAppEventHandler<T>` / `IRevitEventHandler<TArgs>`.
 - Встроенные `Host.*`-команды наших модулей регистрируются автоматически.
 - `SafeGetTypes`: при `ReflectionTypeLoadException` берём загрузившиеся типы, остальное — в лог с именем
   недостающей зависимости (урок AnalyseTool).
@@ -393,7 +391,7 @@ Middleware не содержит бизнес-логики и не ходит в
 - **`InvokeAsync` выполняется синхронно в потоке Revit**, а это и UI-поток. Пока тело работает, окно не получает
   ни прогресс, ни что-либо ещё. Для одного долгого `InvokeAsync` прогресс бесполезен.
 - **Долгая работа — порциями:** `document.InvokeBatchedAsync(items, batchSize: 200, (doc, batch) => …,
-  context.Progress, context.CancellationToken)` — метод `ActiveDocument`, появится вместе с примером прогресса (фаза 5). Между порциями Revit получает управление: окно показывает прогресс,
+  context.Progress, context.CancellationToken)` — метод `ActiveDocument`, появится вместе с примером прогресса (фаза 4). Между порциями Revit получает управление: окно показывает прогресс,
   пользователь может отменить.
 - **Цена порций при записи:** транзакцию и `TransactionGroup` нужно закрыть до выхода из обработчика external event,
   поэтому запись порциями даёт **несколько шагов отмены**. Команда выбирает: одна транзакция (один шаг отмены, без
@@ -402,100 +400,12 @@ Middleware не содержит бизнес-логики и не ходит в
   очереди, есть отмена). Совет Toolkit — не вызывать `.Wait()`/`.Result` в главном потоке Revit — входит в правила
   шаблона.
 
-## 6. События Revit (модуль `Davydov.Revit.Hosting`)
+## 6. События Revit — подписывается приложение (решение 30)
 
-Один механизм вместо четырёх из AnalyseTool. Три вида реакций:
-
-| Что нужно | Механизм | Где выполняется |
-| --- | --- | --- |
-| Отреагировать в C#: обновить кэш, записать в лог, уведомить | **события приложения** `IAppEventHandler<T>` | асинхронно, вне потока Revit; в модель — через `IRevitDispatcher` |
-| Вмешаться в само событие Revit: убрать предупреждение, ответить на диалог, отменить | **синхронные обработчики** `IRevitEventHandler<TArgs>` | синхронно, внутри события Revit; должны быть быстрыми |
-| Изменить модель в ответ на её изменение | **`RevitUpdater`** (обёртка над `IUpdater`) | в той же транзакции; в `DocumentChanged` Revit менять модель запрещает |
-
-Плюс пересылка во фронтенд (`ForwardToClient`, `IClientEvents`) и жизненный цикл (`IHostApplicationLifetime` +
-`IRevitLifetime`). Для разовых подавлений диалогов и ошибок внутри своей операции есть готовые scope из Toolkit
-(`RevitContext.BeginDialogSuppressionScope`, `RevitApiContext.BeginFailureSuppressionScope`) — синхронный обработчик
-нужен, только если реагировать надо на чужие действия.
-
-### События приложения
-
-Модуль сам подписывается на события Revit и отдаёт обработчикам неизменяемые записи — снимок данных,
-снятый ещё в потоке Revit. `Document` наружу не уходит.
-
-```csharp
-public sealed record DocumentInfo(string Title, string PathName, bool IsFamily, bool IsLinked);   // ключа нет: правило ключа — в приложении
-
-public sealed record ActiveDocumentChanged(DocumentInfo? Document);   // null — открытых документов нет
-public sealed record DocumentOpened(DocumentInfo Document);
-public sealed record DocumentClosed(string Title, string PathName);  // запоминается на DocumentClosing
-public sealed record DocumentSaved(DocumentInfo Document);
-public sealed record SelectionChanged(DocumentInfo Document, IReadOnlyList<ElementId> ElementIds);
-public sealed record ModelChanged(
-    DocumentInfo Document,
-    IReadOnlyList<ElementId> Added, IReadOnlyList<ElementId> Modified, IReadOnlyList<ElementId> Deleted,
-    IReadOnlyList<string> Transactions,
-    bool FromOurCommand);   // изменение сделала наша команда — чтобы фронтенд не обновлялся по кругу
-```
-
-- `ActiveDocumentChanged` переносит проверенную логику `DocumentTracker`: сигнал — `ViewActivated` + `DocumentClosed`
-  (`DocumentOpened` срабатывает раньше, чем документ становится активным), смена вида внутри того же документа
-  отсекается сравнением документа в потоке Revit. Ключ для фронтенда приложение считает само из `PathName`/`Title`
-  (`ActiveDocument.GetKey`, раздел 7).
-- `DocumentClosed`: в `DocumentClosedEventArgs` есть только `DocumentId`, сам документ уже недоступен. Поэтому модуль
-  на `DocumentClosing` запоминает `DocumentId → (Title, PathName)`, а на `DocumentClosed` выпускает событие с ними.
-- `FromOurCommand`: `IRevitDispatcher` помечает, что сейчас выполняется работа нашей команды; `DocumentChanged`,
-  пришедший в это время, получает `true`.
-
-### Регистрация
-
-```csharp
-builder.AddRevitEvents(e => e                       // reflection: все IAppEventHandler<> / IRevitEventHandler<> сборок
-    .Debounce<SelectionChanged>(TimeSpan.FromMilliseconds(150))
-    .Debounce<ModelChanged>(TimeSpan.FromMilliseconds(300))
-    .AddUpdater<SheetNumberUpdater>());             // регистрация при старте, снятие при остановке
-
-builder.AddWebView(w => w
-    .ForwardToClient<ActiveDocumentChanged>()       // → React: useRevitEvent("ActiveDocumentChanged")
-    .ForwardToClient<SelectionChanged>()
-    .ForwardToClient<ModelChanged>()
-    .ForwardToClient<DocumentClosed>());
-```
-
-### Обработчики
-
-```csharp
-// Асинхронный: DI через конструктор, свой scope на каждое событие
-public sealed class WarnOnMassDeletion(IClientEvents client, ILogger<WarnOnMassDeletion> log)
-    : IAppEventHandler<ModelChanged>
-{
-    public async Task HandleAsync(ModelChanged e, CancellationToken ct)
-    {
-        if (e.FromOurCommand || e.Deleted.Count < 50) return;
-        log.LogWarning("Удалено {Count} элементов в {Doc}", e.Deleted.Count, e.Document.Title);
-        await client.PublishAsync("Notification", new { level = "warning", text = $"Удалено {e.Deleted.Count}" }, ct);
-    }
-}
-
-// Синхронный: внутри FailuresProcessing, в потоке Revit, без async
-public sealed class SuppressDuplicateMarkWarnings : IRevitEventHandler<FailuresProcessingEventArgs>
-{
-    public void Handle(FailuresProcessingEventArgs e)
-    {
-        FailuresAccessor failures = e.GetFailuresAccessor();
-        foreach (FailureMessageAccessor f in failures.GetFailureMessages())
-            if (IsDuplicateMark(f)) failures.DeleteWarning(f);
-    }
-}
-
-// Апдейтер: UpdaterId, регистрацию и триггеры берёт на себя модуль
-public sealed class SheetNumberUpdater : RevitUpdater
-{
-    protected override void ConfigureTriggers(UpdaterTriggers t) =>
-        t.OnAdd<ViewSheet>().OnParameterChange<ViewSheet>(BuiltInParameter.SHEET_NUMBER);
-
-    protected override void Execute(UpdaterData data) { /* правка модели в той же транзакции */ }
-}
-```
+Своего механизма событий у модулей нет: плагин подписывается на события Revit сам, обычным `+=`, как любой плагин
+на Nice3point. Обёртка в модуле дала бы немного — scope DI, debounce и снимок данных нужны одному-двум обработчикам
+и пишутся в них в несколько строк, а во фронтенд плагин публикует сам через `IClientEvents` (модуль WebView, раздел 9).
+От модуля остаётся жизненный цикл — `IRevitLifetime`.
 
 ### Жизненный цикл
 
@@ -507,7 +417,7 @@ public sealed class SheetNumberUpdater : RevitUpdater
 | --- | --- | --- |
 | `OnStartupAsync`, хост запущен | `IHostApplicationLifetime.ApplicationStarted` | DI, конфигурация; лента строится сразу после; `UIApplication` и документов ещё нет |
 | Revit `ApplicationInitialized` | `IRevitLifetime.Initialized` | `UIApplication` есть, можно идти в модель через `IRevitDispatcher` |
-| `OnShutdownAsync` | `ApplicationStopping` → `StopAsync` → `ApplicationStopped` | отписка от событий, снятие апдейтеров |
+| `OnShutdownAsync` | `ApplicationStopping` → `StopAsync` → `ApplicationStopped` | отписка приложения от событий Revit, снятие его `IUpdater` |
 
 ```csharp
 public sealed class WarmUpCache(IRevitLifetime revit, IFamiliesService families) : BackgroundService
@@ -520,27 +430,65 @@ public sealed class WarmUpCache(IRevitLifetime revit, IFamiliesService families)
 }
 ```
 
-`Idling` наружу не отдаётся: им пользуется только модуль (готовность док-панели).
+### Правила подписки в приложении (уроки AnalyseTool)
 
-### Как устроено внутри
+- **Подписываться только при старте**, в валидном контексте API: в `Host.StartAsync` до первого `await` (как
+  `AddRevitHosting`) или в `OnStartupAsync`. В обработчике WPF `Loaded` и из thread pool Revit бросает исключение
+  (урок `DockPaneHost`).
+- **Обработчик выполняется в потоке Revit, внутри события** — быстро и без ожидания долгих операций. Долгая работа —
+  в thread pool, обратно в модель — через `IRevitDispatcher`.
+- **Ни одно исключение не уходит в Revit:** в каждом обработчике `try/catch` и запись в лог.
+- **Активный документ** — по `ViewActivated` и `DocumentClosed`: `DocumentOpened` срабатывает раньше, чем документ
+  становится активным. Смену вида внутри того же документа отсекать сравнением ключа (`ActiveDocument.GetKey`, раздел 7).
+- **`DocumentClosed`** несёт только `DocumentId`, сам документ уже недоступен: нужное запоминать на `DocumentClosing`.
+- **В `DocumentChanged` модель менять нельзя.** Изменить модель в ответ на её изменение — `IUpdater`: регистрация при
+  старте, снятие при остановке.
+- **Частые события** (`SelectionChanged`, `DocumentChanged`) — склеивать (debounce) в самом обработчике, если
+  реакция дорогая; подписываться на них, только если реакция действительно нужна.
+- **Разовые подавления** диалогов и ошибок внутри своей операции — scope из Toolkit
+  (`RevitContext.BeginDialogSuppressionScope`, `RevitApiContext.BeginFailureSuppressionScope`); обработчики
+  `DialogBoxShowing` / `FailuresProcessing` — только для чужих действий.
+- **`Idling`** — только когда без него никак (готовность док-панели), и отписываться сразу.
+- **При остановке** (`OnShutdownAsync` / `StopAsync`) — отписаться от всего.
 
+### Пример — активный документ во фронтенд (фаза 4)
+
+Шаблон показывает правила на одном примере, который нужен фронтенду: `EventHandlers/ActiveDocumentEvents.cs` в
+приложении.
+
+```csharp
+public sealed partial class ActiveDocumentEvents(UIControlledApplication application, IClientEvents client,
+    ILogger<ActiveDocumentEvents> logger)
+{
+    private string? _key;
+
+    public void Subscribe()                                     // из Host.StartAsync, до первого await
+    {
+        application.ViewActivated += OnViewActivated;
+        application.ControlledApplication.DocumentClosed += OnDocumentClosed;
+    }
+
+    public void Unsubscribe() { /* -= в OnShutdownAsync */ }
+
+    private void OnViewActivated(object? sender, ViewActivatedEventArgs args) => Publish(args.Document);
+    private void OnDocumentClosed(object? sender, DocumentClosedEventArgs args) => Publish(RevitContext.ActiveDocument);
+
+    private void Publish(Document? document)
+    {
+        try
+        {
+            var key = document is null ? null : ActiveDocument.GetKey(document);
+            if (key == _key) return;                            // сменился только вид
+            _key = key;
+            _ = client.PublishAsync("ActiveDocumentChanged", new { key, title = document?.Title });
+        }
+        catch (Exception exception)
+        {
+            LogPublishFailed(logger, exception);                // в Revit исключение не уходит
+        }
+    }
+}
 ```
-Revit-событие (поток Revit)
-  └─ RevitEventSource (hosted-сервис модуля, подписан при старте хоста — ещё внутри OnStartupAsync)
-       ├─ синхронные IRevitEventHandler<TArgs> → сразу, внутри события
-       └─ снимок данных → Channel → фоновая обработка
-              ├─ debounce / склейка (SelectionChanged, ModelChanged)
-              ├─ IAppEventHandler<T> — каждый в своём DI-scope
-              └─ ForwardToClient → IClientEvents → все открытые окна и док-панели
-```
-
-Правила:
-- Подписка только при старте, в валидном контексте API — в обработчике WPF `Loaded` Revit бросает исключение (урок
-  `DockPaneHost`). `RevitEventSource.StartAsync` выполняется внутри `OnStartupAsync`, а `AsyncExternalApplication`
-  возвращает продолжения в поток Revit (раздел 4.1) — подписка там допустима.
-- На «горячие» `DocumentChanged` и `SelectionChanged` подписываемся, только если есть хоть один обработчик или пересылка.
-- Ни одно исключение из обработчика не уходит в Revit: ловится и логируется; ошибка одного обработчика не мешает остальным.
-- При остановке хоста всё отписывается, апдейтеры снимаются.
 
 ## 7. Документы: пользователь может сменить активный документ в любой момент
 
@@ -604,7 +552,8 @@ scoped-сервис приложения `ActiveDocument` и `DocumentCheckMiddl
   заголовок (из события `ActiveDocumentChanged`).
 - `useCommand("GetFamilies")` сам добавляет заголовок `Document`, ключ кэша — `[documentKey, "GetFamilies"]`.
   Вернулся в A — данные A мгновенно из кэша.
-- `refetchOn: ["ModelChanged"]` реагирует только на события активного документа.
+- `refetchOn: ["ActiveDocumentChanged"]` — перезапрос при смене документа; свои события плагин публикует через
+  `IClientEvents` (раздел 6).
 - Пришёл `document_changed` — страница перезапрашивает данные нового документа.
 
 ### Сценарии
@@ -778,17 +727,17 @@ AdWindows (как у кнопок расширений AnalyseTool) не тре�
 
 ```tsx
 const families = useCommand<FamilyDto[]>("GetFamilies", {
-  refetchOn: ["ActiveDocumentChanged", "ModelChanged"],     // перезапросить при смене документа / правке модели
+  refetchOn: ["ActiveDocumentChanged"],                     // перезапросить при смене документа
 });
 const rename = useCommandMutation("RenameFamily");
 
-useRevitEvent<SelectionChanged>("SelectionChanged", e => setSelectedIds(e.elementIds));
+useRevitEvent<SelectionChanged>("SelectionChanged", e => setSelectedIds(e.elementIds));   // если плагин его публикует
 
 if (families.isLoading) return <Spinner />;
 return <FamiliesTable data={families.data} onRename={r => rename.mutate(r)} />;   // компонент проекта, не шаблона
 ```
 
-Позже (фаза 7): типы `TRequest`/`TResponse` и событий для TypeScript генерировать из C#, чтобы фронтенд и бэкенд не расходились.
+Позже (фаза 6): типы `TRequest`/`TResponse` и событий для TypeScript генерировать из C#, чтобы фронтенд и бэкенд не расходились.
 
 ## 11. Настройки и логи (`Davydov.Revit.Addin.ServiceDefaults` + модуль)
 
@@ -855,10 +804,10 @@ Nice3point (`global.json` → Microsoft.Testing.Platform).
   dotnet test -c "Release.R26"      # или dotnet run; конфигурация выбирает версию Revit
   ```
 
-  - Что проверяют: `IRevitDispatcher`, `ActiveDocument`, команды, которые меняют модель, `RevitUpdater`, события
+  - Что проверяют: `IRevitDispatcher`, `ActiveDocument`, команды, которые меняют модель, подписки на события
     с реальными документами. `RevitApiUiTest` — для того, что требует `UIApplication`.
   - Нужен установленный и лицензированный Revit той версии, что в конфигурации. Поэтому в облачном CI эти тесты не
-    запускаются — локально или на своём раннере с Revit (фаза 6).
+    запускаются — локально или на своём раннере с Revit (фаза 5).
   - Путь запуска плагина (`.addin` → Launcher → ALC → `Host` → лента) тесты не
     проверяют — для этого Debug-панель «Dev» и короткий чек-лист в `docs/manual-tests.md`.
 - **Бенчмарки** — проект Nice3point «Revit Benchmark» (BenchmarkDotNet в потоке Revit), по желанию.
@@ -891,7 +840,7 @@ Nice3point (`global.json` → Microsoft.Testing.Platform).
    `AddRevitHosting` — внутри `OnStartup`, до первого `await`. ServiceDefaults добавляет слои конфигурации
    (`AddConfigurationDefaults`) и `IUserSettings` (`AddUserSettings`, запись через временный файл). `Host` пишет время
    старта в журнал. В Debug: `StartupProbe` (ждёт `Initialized`, читает модель через диспетчер) и кнопка «User settings».
-   **Перенесено:** `ICommandSender` — в фазу 3 (нужен конвейер); `InvokeBatchedAsync` — в фазу 5, методом
+   **Перенесено:** `ICommandSender` — в фазу 3 (нужен конвейер); `InvokeBatchedAsync` — в фазу 4, методом
    `ActiveDocument` вместе с примером прогресса. Перегрузок диспетчера с документом нет (решение 29). Секреты через DPAPI — когда понадобятся (MCP / AI-провайдеры).
 3. **Команды** — `AddRevitCommands` (reflection-регистрация и проверки `Build()`, раздел 5.3), встроенная
    `Host.GetCommands`, конвейер (`ExceptionHandling` + `c.Use…`, раздел 5.4), запуск конвейера в thread pool,
@@ -906,29 +855,26 @@ Nice3point (`global.json` → Microsoft.Testing.Platform).
    `ICommandSender`, `Host.GetCommands`), проходят на R25–R27; `Davydov.Revit.Addin.Tests` — диспетчер,
    `ActiveDocument` с двумя документами, ключ документа, `DocumentCheckMiddleware` — собраны, но не запускались
    (на машине сборки нет Revit).
-4. **События** — `AddRevitEvents`: `RevitEventSource`, события приложения (включая `DocumentClosed` с заголовком и путём),
-   синхронные обработчики, `RevitUpdater`, debounce.
-   Готово, когда: смена документа и правка модели доходят до `IAppEventHandler`, апдейтер срабатывает,
-   исключение в обработчике не роняет Revit.
-5. **Модуль `Davydov.Revit.Hosting.WebView`** — окружение WebView2 и защита навигации (раздел 9), `WebViewWindow`,
+4. **Модуль `Davydov.Revit.Hosting.WebView`** — окружение WebView2 и защита навигации (раздел 9), `WebViewWindow`,
    док-панель через `DockablePaneProvider`, транспорт, `revit-bridge` (TS), React-хуки, пустое React-приложение со
-   страницей-примером, Vite HMR в Debug, `ForwardToClient` / `useRevitEvent` / `refetchOn`, `useActiveDocument`, `ActiveDocument.InvokeBatchedAsync`.
+   страницей-примером, Vite HMR в Debug, `IClientEvents` / `useRevitEvent` / `refetchOn`, `useActiveDocument`, `ActiveDocument.InvokeBatchedAsync`; пример
+   подписки `ActiveDocumentEvents` в приложении (раздел 6).
    Готово, когда: кнопка в React вызывает команду и показывает результат и прогресс (на `InvokeBatchedAsync`);
    при смене документа окна и док-панель перезапрашивают данные, а вызов с данными старого документа получает
    `document_changed`; переход по
    внешней ссылке открывает системный браузер.
-6. **Сборка и выпуск — как у Nice3point** — ModularPipelines (`build/`: compile, test, pack, publish), WixSharp
+5. **Сборка и выпуск — как у Nice3point** — ModularPipelines (`build/`: compile, test, pack, publish), WixSharp
    (`installer/`) + bundle для Autodesk Store, GitHub workflows `Compile.yml` / `PublishRelease.yml`, версия из
    git-тегов, CHANGELOG. Плюс наше: проверка границ по таблице 3.1 и запрета `ActiveUIDocument` (раздел 7), сборка
    фронтенда в `pack`. Тесты внутри Revit — не в облачном CI: локально или на своём раннере.
-7. **Шаблон** — свой `dotnet new davydov-revit -n Davydov.Revit.Addin` (решение 24): копия структуры Nice3point + наши модули в
+6. **Шаблон** — свой `dotnet new davydov-revit -n Davydov.Revit.Addin` (решение 24): копия структуры Nice3point + наши модули в
    исходниках, параметры; в README шаблона — с какой версией примера Nice3point он сверен и как переносить их обновления.
    **Каждый новый проект получает свои идентификаторы** (`guids` и `sourceName` в `template.json`): `AddInId` в `.addin`,
    имя класса приложения для Launcher, имя ALC, GUID док-панели, UpgradeCode установщика (`build/appsettings.json`), имена папок WebView2,
    логов и `usersettings`, имя virtual host. Проверка: два плагина из шаблона одновременно в одном Revit. CLAUDE.md и навыки для ИИ-агентов
-   (как `.agents/skills` у Nice3point: правила документов, команд, событий, потоков, ленты); генерация TS-типов
+   (как `.agents/skills` у Nice3point: правила документов, команд, подписки на события, потоков, ленты); генерация TS-типов
    (утилита после сборки читает команды из DLL через `MetadataLoadContext` и пишет `ClientApp/src/generated/commands.ts`).
-8. **Опционально** — MCP, Roslyn-скрипты (переносятся из AnalyseTool как модули `AddMcp()` и т.п.).
+7. **Опционально** — MCP, Roslyn-скрипты (переносятся из AnalyseTool как модули `AddMcp()` и т.п.).
    Системы сторонних расширений нет (решение 12).
 
 ## 14. Открытые вопросы
@@ -940,31 +886,32 @@ _(открытых вопросов нет)_
 | # | Решение | Дата |
 | --- | --- | --- |
 | 1 | Наши модули сначала живут в исходниках шаблона; в NuGet выносим, когда API устоится. | 2026-10-24 |
-| 2 | В базе только WebView2 + веб-фронтенд. MCP, Roslyn — позже, опциональными модулями (фаза 8). ~~Расширения/SDK~~ — отменено решением 12. | 2026-10-24 |
+| 2 | В базе только WebView2 + веб-фронтенд. MCP, Roslyn — позже, опциональными модулями (фаза 7). ~~Расширения/SDK~~ — отменено решением 12. | 2026-10-24 |
 | 3 | Раздача через `dotnet new` (`.template.config`, переименование по `sourceName`). | 2026-10-24 |
 | 4 | Revit 2025–2027: net8 для 2025/2026, net10 для 2027. | 2026-10-24 |
 | 5 | Фронтенд — React (вместо Vue из AnalyseTool). Мост к Revit — отдельный TS-модуль без привязки к фреймворку. | 2026-10-24 |
 | 6 | Сериализация — System.Text.Json везде. Newtonsoft — только внутри обёрток сторонних библиотек. ~~Версия STJ из runtime (без NuGet-пакета); поэтому версии Microsoft.Extensions.* совпадают с runtime каждого TFM.~~ — изменено решением 22: одна версия 10.x для всех, как у Nice3point. | 2026-10-24 |
 | 7 | Имя команды по умолчанию = имя класса; `[Command("…")]` — необязательное переопределение. | 2026-10-24 |
-| 8 | События Revit — один механизм: события приложения (async), синхронные обработчики, `RevitUpdater`, пересылка во фронтенд. | 2026-10-24 |
+| 8 | ~~События Revit — один механизм: события приложения (async), синхронные обработчики, `RevitUpdater`, пересылка во фронтенд.~~ — заменено решением 30. | 2026-10-24 |
 | 9 | ~~Документ — часть запроса: `DocumentKey` из реестра, middleware `DocumentBinding`, `context.Document` вместо `ActiveUIDocument`; окна follow/pinned.~~ — заменено решением 29. | 2026-10-24 |
-| 10 | Один способ: команды и обработчики событий — только классы. Регистрация — один вызов (`AddRevitCommands`), проверки при `Build()`. Делегаты в стиле Minimal API (`MapCommand`, `app.On<T>`) — не делаем, пока не понадобятся. | 2026-10-24 |
+| 10 | Один способ: команды ~~и обработчики событий~~ (решение 30) — только классы. Регистрация — один вызов (`AddRevitCommands`), проверки при `Build()`. Делегаты в стиле Minimal API (`MapCommand`, `app.On<T>`) — не делаем, пока не понадобятся. | 2026-10-24 |
 | 11 | ~~Компоненты — shadcn/ui + Tailwind 4 (не PrimeReact). Таблица — своя `<DataTable>` на TanStack Table + Virtual, собирается один раз в шаблоне.~~ Снято решением 20. | 2026-10-24 |
 | 12 | Системы сторонних расширений (загрузка чужих DLL, SDK-пакет, collectible ALC) нет — ни в базе, ни опционально. | 2026-10-24 |
 | 13 | ~~Регистрация команд и обработчиков событий — source generator с фазы 3, без reflection. Генератор сам пишет `AddCommands()`/`AddRevitEvents()`, ловит ошибки при компиляции (`DRT001–005`), анализатор `DRT010` запрещает `ActiveUIDocument`. DI проверяется при `Build()`.~~ Отменено решением 15. | 2026-10-24 |
 | 14 | ~~Кнопки ленты — пул слотов в Launcher, вся лента описывается в `Program.cs`, внутреннее имя кнопки стабильное и не зависит от слота. Генерация пула по `[assembly: RibbonSlotPool(64)]`, `.Command<T>()`.~~ Отменено решением 22: кнопки — `ExternalCommand`, как у Nice3point. | 2026-10-24 |
-| 15 | Как в AnalyseTool, без генератора: команды и обработчики событий регистрируются reflection-сканом сборок в DI, ошибки — при `Build()`. Окна — один общий `WebViewWindow`. ~~Launcher вызывает через reflection один класс фреймворка `RevitEntry.Start`, тот находит `Program.Build`. Кнопка ленты — метод в `Program.cs` (`AddButton(..., click: b => …)` с `ButtonContext`); в Launcher — неизменный рукописный файл `RibbonSlots.cs` (32 слота).~~ — отменено решением 22. | 2026-10-24 |
+| 15 | Как в AnalyseTool, без генератора: команды ~~и обработчики событий~~ (решение 30) регистрируются reflection-сканом сборок в DI, ошибки — при `Build()`. Окна — один общий `WebViewWindow`. ~~Launcher вызывает через reflection один класс фреймворка `RevitEntry.Start`, тот находит `Program.Build`. Кнопка ленты — метод в `Program.cs` (`AddButton(..., click: b => …)` с `ButtonContext`); в Launcher — неизменный рукописный файл `RibbonSlots.cs` (32 слота).~~ — отменено решением 22. | 2026-10-24 |
 | 16 | Builder — настоящий Generic Host. Стандартные события `IHostApplicationLifetime` сохраняют смысл; готовность Revit (`ApplicationInitialized`) — отдельный `IRevitLifetime.Initialized`. Окружение `Development` в Debug. ~~`Host.CreateEmptyApplicationBuilder` внутри `RevitAppBuilder : IHostApplicationBuilder`; старт и остановка хоста — в thread pool.~~ — заменено решением 22: `Host.cs` по образцу Nice3point (`HostApplicationBuilder`, `DisableDefaults`); как ждать старт — проверить в фазе 1. | 2026-10-24 |
 | 17 | Два интерфейса команд: `ICommand<TResponse>` (без входа) и `ICommand<TRequest, TResponse>`; «нет результата» — `Empty` (во фронтенд — `null`). Класс с обоими интерфейсами — ошибка при `Build()`. | 2026-10-24 |
 | 18 | `ExceptionHandling` встроен и всегда стоит первым; свои слои — в `AddRevitCommands(c => c.Use…)` (~~`Program.cs`~~ — решение 22). ~~`DocumentBinding` встроен вторым; `DocumentKind.Any` / `DocumentKind.None`.~~ — снято решением 29. | 2026-10-24 |
-| 19 | Встроенного подтверждения опасных команд (`ConfirmDestructive`) нет — ни в базе, ни опционально. Подтверждает вызывающий (страница React, кнопка). ~~`Destructive` в `[Command]` остаётся метаданными (MCP `destructiveHint` в фазе 8).~~ — снято решением 29: подсказки для MCP — в фазе 8, если понадобятся. | 2026-10-24 |
+| 19 | Встроенного подтверждения опасных команд (`ConfirmDestructive`) нет — ни в базе, ни опционально. Подтверждает вызывающий (страница React, кнопка). ~~`Destructive` в `[Command]` остаётся метаданными (MCP `destructiveHint` в фазе 7).~~ — снято решением 29: подсказки для MCP — в фазе 7, если понадобятся. | 2026-10-24 |
 | 20 | Фронтенд в шаблоне минимальный: `revit-bridge` (TS), React-хуки поверх него (TanStack Query, `useActiveDocument`) и пустое приложение Vite + React + TS со страницей-примером. Библиотеку компонентов, таблицы, деревья, роутинг и т.п. выбирает каждый проект. | 2026-10-24 |
 | 21 | Тесты — TUnit: без Revit (`Davydov.Revit.Hosting.Tests`) и внутри Revit через Nice3point.TUnit.Revit (`Davydov.Revit.Addin.Tests`). Тесты в Revit — локально или на своём раннере, не в облачном CI. Путь запуска плагина (`.addin` → Launcher → ALC → `Host`, решение 26) — Debug-панель «Dev» и ручной чек-лист. | 2026-10-24 |
-| 22 | **Основа — структура и инструменты Nice3point** (эталон — `samples/MultiProjectSolution`): `Nice3point.Revit.Sdk` (конфигурации `Debug.R25…Release.R27`, `DeployAddin`, `LaunchRevit`), `Nice3point.Revit.Toolkit` (~~изоляция зависимостей вместо своего Launcher/ALC~~ — неверно, Toolkit изоляцию убрал, см. решения 25, 26; `AsyncExternalEvent` под `IRevitDispatcher`, `DockablePaneProvider`), `Nice3point.Revit.Extensions` (лента: кнопки — `ExternalCommand`; ставятся нашей обёрткой `AddButton<T>`, решения 25, 26), `Host.cs` + `ServiceDefaults`, `Nice3point.Revit.Logging`, ModularPipelines вместо NUKE, WixSharp, TUnit. Одна версия Microsoft.Extensions.\* (10.x) для всех версий Revit. Отклонение от Nice3point — CPM (`Directory.Packages.props`). **Наше — модули** `Davydov.Revit.Hosting` (команды, конвейер, события, настройки) и `Davydov.Revit.Hosting.WebView` (WebView2, окна, док-панель, мост), подключаются методами `builder.AddRevitCommands()` / `AddRevitEvents()` / `AddWebView()`. | 2026-10-24 |
+| 22 | **Основа — структура и инструменты Nice3point** (эталон — `samples/MultiProjectSolution`): `Nice3point.Revit.Sdk` (конфигурации `Debug.R25…Release.R27`, `DeployAddin`, `LaunchRevit`), `Nice3point.Revit.Toolkit` (~~изоляция зависимостей вместо своего Launcher/ALC~~ — неверно, Toolkit изоляцию убрал, см. решения 25, 26; `AsyncExternalEvent` под `IRevitDispatcher`, `DockablePaneProvider`), `Nice3point.Revit.Extensions` (лента: кнопки — `ExternalCommand`; ставятся нашей обёрткой `AddButton<T>`, решения 25, 26), `Host.cs` + `ServiceDefaults`, `Nice3point.Revit.Logging`, ModularPipelines вместо NUKE, WixSharp, TUnit. Одна версия Microsoft.Extensions.\* (10.x) для всех версий Revit. Отклонение от Nice3point — CPM (`Directory.Packages.props`). **Наше — модули** `Davydov.Revit.Hosting` (команды, конвейер, ~~события~~ — решение 30, настройки) и `Davydov.Revit.Hosting.WebView` (WebView2, окна, док-панель, мост), подключаются методами `builder.AddRevitCommands()` / ~~`AddRevitEvents()`~~ / `AddWebView()`. | 2026-10-24 |
 | 23 | Логи: ServiceDefaults Nice3point (Debug + журнал Revit, в Release — `Warning` и выше) **плюс** файловый лог Serilog как провайдер (`builder.Logging.AddSerilog`), `%LOCALAPPDATA%\<Tool>\logs\<RevitVersion>\log-.txt`, `Information`, ротация по дням. | 2026-10-24 |
 | 24 | Раздача — свой `dotnet new davydov-revit`: копия структуры Nice3point `MultiProjectSolution` + наши модули в исходниках (решения 1, 3). Обновления Nice3point переносятся вручную сверкой с их примером; переход на «их шаблон + наши NuGet-пакеты» — когда модули устоятся. | 2026-10-24 |
 | 25 | ~~Изоляция зависимостей: **Revit 2026+** — штатная (`ManifestSettings` в `.addin`, как у Nice3point); **Revit 2025** — свой Launcher + `AssemblyLoadContext`.~~ — заменено решением 26. Остаётся: вход — один reflection-вызов `Davydov.Revit.Addin.Application` внутри ALC; кнопки ставятся обёрткой `AddButton<T>` / `SetAvailability<T>` и указывают на однострочные прокси в Launcher (`: ProxyCommand` / `: ProxyAvailability`), наличие прокси проверяется при старте; `IsRepackable=false`. | 2026-10-24 |
 | 26 | Изоляция — **всегда свой Launcher + `AssemblyLoadContext`** на всех версиях Revit (2025–2027), как в AnalyseTool. Один `.addin` — в `Davydov.Revit.Addin.Launcher`, без `ManifestSettings`; штатная изоляция Revit не используется. Отклонение от структуры Nice3point; убрать Launcher можно, когда штатная изоляция станет надёжной. | 2026-10-24 |
 | 27 | Имя-заглушка плагина в шаблоне — `Davydov.Revit.Addin` (проекты `Davydov.Revit.Addin`, `.Launcher`, `.ServiceDefaults`, решение `Davydov.Revit.Addin.slnx`); при `dotnet new` заменяется на имя нового плагина. Наши модули (`Davydov.Revit.Hosting*`) имя плагина не используют. | 2026-10-24 |
-| 28 | Команды, документы, события и WebView **обязательны в каждом плагине** из шаблона, поэтому `Davydov.Revit.Hosting` (и позже `Davydov.Revit.Hosting.WebView`) остаётся отдельным проектом-основой, как `AnalyseTool.Core`, без параметров шаблона «с модулями / без». Рассматривали перенос в папку приложения и необязательные модули — отклонено. | 2026-10-24 |
+| 28 | Команды, документы, события и WebView **обязательны в каждом плагине** из шаблона (документ и события — правилами в приложении, решения 29, 30), поэтому `Davydov.Revit.Hosting` (и позже `Davydov.Revit.Hosting.WebView`) остаётся отдельным проектом-основой, как `AnalyseTool.Core`, без параметров шаблона «с модулями / без». Рассматривали перенос в папку приложения и необязательные модули — отклонено. | 2026-10-24 |
 | 29 | **Документ — правило приложения, не модуля.** В `Davydov.Revit.Hosting` нет реестра документов, `DocumentRef`, `DocumentKind`, `DocumentBinding` и `context.Document`; в запросе — общие `Headers`, модуль их не читает. В приложении: scoped-сервис `ActiveDocument` (активный документ, зафиксированный на всю команду; сменился — `document_changed`) и `DocumentCheckMiddleware` (ключ из заголовка `Document` фиксирует документ заранее). Плагин может заменить их своими. Выполнения в неактивном документе и закреплённых окон нет. `[Command]` — только имя и `Description`: `ReadOnly`, `Destructive`, `RequiresActiveDocument`, `DocumentKind` и `CommandMetadata` убраны. | 2026-10-24 |
+| 30 | **События Revit — дело приложения, не модуля.** Механизма событий в `Davydov.Revit.Hosting` нет: ни `AddRevitEvents`, ни `IAppEventHandler<T>` / `IRevitEventHandler<TArgs>`, ни `RevitUpdater`, ни debounce и `ForwardToClient`. Плагин подписывается сам (`+=`) по правилам раздела 6; во фронтенд публикует через `IClientEvents` модуля WebView. От модуля — только `IRevitLifetime`. Пример `ActiveDocumentEvents` — в фазе WebView. Фаза «События» убрана, фазы 5–8 стали 4–7. | 2026-10-25 |

@@ -38,7 +38,7 @@ public static class CommandSources
     /// <summary>A WebView2 window or dock pane.</summary>
     public const string WebView = "webview2";
 
-    /// <summary>An AI client through MCP (phase 8).</summary>
+    /// <summary>An AI client through MCP (phase 7).</summary>
     public const string Mcp = "mcp";
 }
 
