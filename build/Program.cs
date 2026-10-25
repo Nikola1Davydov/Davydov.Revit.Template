@@ -36,7 +36,7 @@ internal partial class Program
     ///     Adds the modules of this repository only — our tests — implemented in build/RepositoryModules.cs.
     /// </summary>
     /// <remarks>
-    ///     Projects made from the template get neither that file nor the tests (plan, phase 6): a partial method without
+    ///     Projects made from the template get neither that file nor the tests: a partial method without
     ///     an implementation compiles away together with its call.
     /// </remarks>
     static partial void AddRepositoryModules(IServiceCollection services, string[] args);

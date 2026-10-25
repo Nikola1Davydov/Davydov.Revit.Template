@@ -6,7 +6,7 @@ const bridge = fileURLToPath(new URL("../../Davydov.Revit.Hosting.WebView/revit-
 
 export default defineConfig({
   plugins: [react()],
-  // Relative asset paths: Release serves dist over the virtual host of WebViewHost (plan, section 9)
+  // Relative asset paths: Release serves dist over the virtual host of WebViewHost
   base: "./",
   server: {
     // The address of ClientApp:DevServerUrl in appsettings; WebView2 loads it in Development

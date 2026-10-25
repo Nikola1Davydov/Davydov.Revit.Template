@@ -6,7 +6,7 @@ using Microsoft.Extensions.Hosting;
 namespace Davydov.Revit.Hosting.WebView.Controls;
 
 /// <summary>
-///     The content of the one dock pane of the add-in (plan, section 8), as <c>DockPaneHost</c> in AnalyseTool.
+///     The content of the one dock pane of the add-in.
 /// </summary>
 /// <remarks>
 ///     <para>

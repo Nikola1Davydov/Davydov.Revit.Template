@@ -2,7 +2,7 @@
 
     <!--
         The add-in application (Nice3point "Revit AddIn Application"). Revit does not load this assembly
-        directly: Davydov.Revit.Addin.Launcher loads it into an isolated AssemblyLoadContext (plan, section 8).
+        directly: Davydov.Revit.Addin.Launcher loads it into an isolated AssemblyLoadContext.
         The .addin manifest, DeployAddin and LaunchRevit live in the Launcher.
     -->
 
@@ -41,7 +41,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <!-- The built pages (npm run build in ClientApp), served over the virtual host in Release (plan, section 10) -->
+        <!-- The built pages (npm run build in ClientApp), served over the virtual host in Release -->
         <Content Include="ClientApp\dist\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest"/>
     </ItemGroup>
 

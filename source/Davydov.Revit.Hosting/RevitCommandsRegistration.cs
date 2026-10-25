@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 namespace Microsoft.Extensions.Hosting;
 
 /// <summary>
-///     Registers the commands and the pipeline of the Davydov.Revit.Hosting module (plan, section 5).
+///     Registers the commands and the pipeline of the Davydov.Revit.Hosting module.
 /// </summary>
 [PublicAPI]
 public static class RevitCommandsRegistration

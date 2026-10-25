@@ -31,7 +31,7 @@
 
     <ItemGroup>
         <Content Include="..\**\*"
-                 Exclude="..\.git\**;..\.vs\**;..\.idea\**;..\.claude\**;..\**\bin\**;..\**\obj\**;..\**\node_modules\**;..\**\ClientApp\dist\**;..\output\**;..\TestResults\**;..\**\*.user;..\template\*.csproj"
+                 Exclude="..\.git\**;..\.vs\**;..\.idea\**;..\.claude\**;..\**\bin\**;..\**\obj\**;..\**\node_modules\**;..\**\ClientApp\dist\**;..\output\**;..\**\TestResults\**;..\**\*.user;..\template\*.csproj"
                  PackagePath="content\Davydov.Revit.AddIn\"/>
         <Compile Remove="**\*"/>
     </ItemGroup>

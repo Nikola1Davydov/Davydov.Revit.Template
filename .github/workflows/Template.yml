@@ -1,4 +1,4 @@
-# This repository only (the template leaves it out): checks that a project made from the template builds (plan, phase 6)
+# This repository only (the template leaves it out): checks that a project made from the template builds
 name: Check template
 
 on:
@@ -42,7 +42,8 @@ jobs:
         shell: pwsh
         working-directory: ${{ runner.temp }}/Acme.Revit.Tools
         run: |
-          $leftovers = Get-ChildItem -Recurse -File | Select-String -Pattern 'Davydov\.Revit\.Addin|Davydov_Revit_Addin|davydov-revit-addin|<VendorId>Davydov<'
+          # Placeholder names, and references to this repository's plan or to AnalyseTool that mean nothing in a new project
+          $leftovers = Get-ChildItem -Recurse -File | Select-String -Pattern 'Davydov\.Revit\.Addin|Davydov_Revit_Addin|davydov-revit-addin|<VendorId>Davydov<|\(plan, |docs/PLAN|AnalyseTool'
           $extra = 'tests', 'docs', 'template', 'LICENSE', 'build/RepositoryModules.cs', '.github/workflows/Template.yml' | Where-Object { Test-Path $_ }
           $leftovers | ForEach-Object { "$($_.Path):$($_.LineNumber): $($_.Line.Trim())" }
           $extra | ForEach-Object { "Not part of the template: $_" }
@@ -60,3 +61,13 @@ jobs:
           git add -A
           git -c user.name=ci -c user.email=ci@example.invalid commit -q -m "Created from the template"
           dotnet run -c Release --project build
+
+      # The Launcher rule names the add-in, so it has to follow the rename: a type of the add-in in the Launcher must fail
+      - name: Check the boundary rule of the Launcher after the rename
+        shell: pwsh
+        working-directory: ${{ runner.temp }}/Acme.Revit.Tools
+        run: |
+          Set-Content source/Acme.Revit.Tools.Launcher/BoundaryProbe.cs 'internal static class BoundaryProbe { public static System.Type Type = typeof(Acme.Revit.Tools.Application); }'
+          pwsh -NoProfile -File build/Check-Boundaries.ps1
+          if ($LASTEXITCODE -ne 1) { Write-Host "The Launcher rule did not catch a type of the add-in"; exit 1 }
+          exit 0

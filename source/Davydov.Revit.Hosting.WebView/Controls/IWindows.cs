@@ -6,7 +6,7 @@ using Nice3point.Revit.Toolkit;
 namespace Davydov.Revit.Hosting.WebView.Controls;
 
 /// <summary>
-///     Opens the pages of the add-in: windows and the dock pane (plan, section 8). Call from the Revit UI thread — a
+///     Opens the pages of the add-in: windows and the dock pane. Call from the Revit UI thread — a
 ///     ribbon button.
 /// </summary>
 [PublicAPI]
@@ -24,7 +24,7 @@ public interface IWindows
     void ShowDockPane(string route);
 }
 
-/// <summary>One window per route, as <c>_familyWindow</c> / <c>Restore</c> in AnalyseTool's <c>RibbonHost</c>.</summary>
+/// <summary>One window per route: showing an open route brings its window to the front instead of opening a second one.</summary>
 internal sealed class WindowManager(
     WebViewServices services,
     UIControlledApplication application,

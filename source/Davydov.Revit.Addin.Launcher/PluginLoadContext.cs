@@ -4,7 +4,7 @@ using System.Runtime.Loader;
 namespace Davydov.Revit.Addin.Launcher;
 
 /// <summary>
-///     The isolated context of the add-in, as <c>IsolatedAssemblyLoadContent</c> in AnalyseTool.
+///     The isolated context of the add-in.
 /// </summary>
 /// <remarks>
 ///     Assemblies listed in the Launcher's <c>deps.json</c> — the add-in, Microsoft.Extensions.*, Nice3point libraries,

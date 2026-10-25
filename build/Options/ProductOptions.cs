@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Build.Options;
 
 /// <summary>
-///     The product the installer and the bundle ship. Every project made from the template gets its own (plan, phase 6).
+///     The product the installer and the bundle ship. Every project made from the template gets its own.
 /// </summary>
 [Serializable]
 public sealed record ProductOptions

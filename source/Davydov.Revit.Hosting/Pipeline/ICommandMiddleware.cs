@@ -8,7 +8,7 @@ namespace Davydov.Revit.Hosting.Pipeline;
 public delegate Task<object?> CommandDelegate(CommandContext context);
 
 /// <summary>
-///     A layer around every command call, as ASP.NET Core middleware (plan, section 5.4).
+///     A layer around every command call, as ASP.NET Core middleware.
 /// </summary>
 /// <remarks>
 ///     Runs outside the Revit thread and sees only the request (<see cref="CommandContext.Request" />): no business

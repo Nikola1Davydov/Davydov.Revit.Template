@@ -4,7 +4,7 @@ using System.Runtime.Loader;
 namespace Davydov.Revit.Addin.Infrastructure.Ribbon;
 
 /// <summary>
-///     Describes the Launcher that loaded the add-in into its isolated <see cref="AssemblyLoadContext" /> (plan, section 8).
+///     Describes the Launcher that loaded the add-in into its isolated <see cref="AssemblyLoadContext" />.
 /// </summary>
 /// <remarks>
 ///     The Launcher publishes its location through <see cref="AppContext" /> data: it is process-wide, so both load

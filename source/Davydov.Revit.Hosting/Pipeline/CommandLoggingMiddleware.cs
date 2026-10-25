@@ -6,7 +6,7 @@ namespace Davydov.Revit.Hosting.Pipeline;
 
 /// <summary>
 ///     Logs who called which command, from where, how long it took and how it ended
-///     (<c>UseCommandLogging</c>, plan, section 5.4).
+///     (<c>UseCommandLogging</c>).
 /// </summary>
 public sealed partial class CommandLoggingMiddleware(ILogger<CommandLoggingMiddleware> logger) : ICommandMiddleware
 {

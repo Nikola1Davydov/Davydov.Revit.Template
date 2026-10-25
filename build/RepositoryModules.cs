@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ModularPipelines.Extensions;
 
 /// <summary>
-///     The modules of this repository only; the template leaves this file out (plan, phase 6).
+///     The modules of this repository only; the template leaves this file out.
 /// </summary>
 internal partial class Program
 {

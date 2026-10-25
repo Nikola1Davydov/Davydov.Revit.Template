@@ -1,7 +1,7 @@
 namespace Davydov.Revit.Hosting.Commands;
 
 /// <summary>
-///     A command without input — the controller of the plan (sections 4, 5). The command name is the class name without the
+///     A command without input — the controller of an ASP.NET Core app. The command name is the class name without the
 ///     <c>Command</c> suffix, or the name from <see cref="CommandAttribute" />.
 /// </summary>
 /// <typeparam name="TResponse">The result type; <see cref="Empty" /> for no result.</typeparam>

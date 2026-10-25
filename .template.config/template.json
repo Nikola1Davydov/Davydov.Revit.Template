@@ -131,7 +131,7 @@
             "LICENSE",
             "package-lock.json",
             "output/**",
-            "TestResults/**",
+            "**/TestResults/**",
             "**/bin/**",
             "**/obj/**",
             "**/node_modules/**",

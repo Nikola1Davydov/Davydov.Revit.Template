@@ -1,8 +1,8 @@
 <Project Sdk="Nice3point.Revit.Sdk">
 
     <!--
-        Our module (plan, section 3): command pipeline, events, IRevitDispatcher, ribbon buttons.
-        Headless: no UseWPF, no System.Windows (plan, section 3.1).
+        Our module: command pipeline, events, IRevitDispatcher, ribbon buttons.
+        Headless: no UseWPF, no System.Windows.
     -->
 
     <PropertyGroup>

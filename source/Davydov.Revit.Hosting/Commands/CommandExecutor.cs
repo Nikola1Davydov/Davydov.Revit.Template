@@ -16,7 +16,7 @@ public interface ICommandExecutor
     /// <summary>
     ///     Runs the command through the pipeline. Never throws: failures come back as <see cref="CommandResult.Error" />.
     /// </summary>
-    /// <remarks>The pipeline always runs on the thread pool, never on the Revit UI thread (plan, section 5.5).</remarks>
+    /// <remarks>The pipeline always runs on the thread pool, never on the Revit UI thread.</remarks>
     Task<CommandResult> ExecuteAsync(CommandRequest request);
 }
 
@@ -26,7 +26,7 @@ public interface ICommandExecutor
 internal sealed record MiddlewarePipeline(IReadOnlyList<Type> MiddlewareTypes);
 
 /// <summary>
-///     Runs <c>ExceptionHandling → middleware → command</c> (decision 18).
+///     Runs <c>ExceptionHandling → middleware → command</c>.
 ///     ExceptionHandling is the try/catch of this class: it turns every exception into a <see cref="CommandResult" /> and shows
 ///     ribbon failures with <see cref="IUserNotifier" />, because a ribbon call has no window to answer to.
 /// </summary>

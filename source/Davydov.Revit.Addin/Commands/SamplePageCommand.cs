@@ -5,7 +5,7 @@ using Nice3point.Revit.Toolkit.External;
 namespace Davydov.Revit.Addin.Commands;
 
 /// <summary>
-///     Opens the sample page in a window; a second click brings the open window to front (plan, section 8).
+///     Opens the sample page in a window; a second click brings the open window to front.
 /// </summary>
 [UsedImplicitly]
 [Transaction(TransactionMode.Manual)]

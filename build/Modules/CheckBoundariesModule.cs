@@ -7,7 +7,7 @@ using Sourcy.DotNet;
 namespace Build.Modules;
 
 /// <summary>
-///     Check the project boundaries of the plan: references by table 3.1, headless Davydov.Revit.Hosting, no
+///     Check the project boundaries: references between projects, headless Davydov.Revit.Hosting, no
 ///     ActiveUIDocument in the add-in's Features/ and Services/, no add-in types in the Launcher (build/Check-Boundaries.ps1).
 /// </summary>
 /// <remarks>Runs on every pipeline run, in CI as well; a violation fails the pipeline.</remarks>

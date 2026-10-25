@@ -5,7 +5,7 @@ namespace Davydov.Revit.Hosting.Pipeline;
 
 /// <summary>
 ///     Refuses a second call of a command while the first one is still running — a double click
-///     (<c>UseSingleFlight</c>, plan, section 5.4).
+///     (<c>UseSingleFlight</c>).
 /// </summary>
 public sealed class SingleFlightMiddleware : ICommandMiddleware
 {

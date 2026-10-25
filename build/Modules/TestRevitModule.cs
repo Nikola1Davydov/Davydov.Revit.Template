@@ -12,8 +12,8 @@ namespace Build.Modules;
 ///     Run the tests inside Revit (Davydov.Revit.Addin.Tests) for each supported Revit configuration.
 /// </summary>
 /// <remarks>
-///     Nice3point.TUnit.Revit starts the installed Revit of the configuration, so not in CI (plan, section 12): locally,
-///     with Revit closed. Our tests only, not part of the template (plan, phase 6).
+///     Nice3point.TUnit.Revit starts the installed Revit of the configuration, so not in CI: locally,
+///     with Revit closed. Our tests only, not part of the template.
 /// </remarks>
 [SkipIf<IsCI>]
 [DependsOn<ResolveConfigurationsModule>]

@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <!--
-        The build pipeline (plan, phase 5), as build/ in Nice3point Revit Templates: dotnet run -c Release, with the test argument for our tests.
-        Package versions come from Directory.Packages.props like everywhere else (decision 22).
+        The build pipeline, as build/ in Nice3point Revit Templates: dotnet run -c Release, with the test argument for our tests.
+        Package versions come from Directory.Packages.props like everywhere else.
     -->
 
     <PropertyGroup>

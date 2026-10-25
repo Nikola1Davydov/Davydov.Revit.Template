@@ -41,8 +41,8 @@ public sealed class CommandRegistry
 }
 
 /// <summary>
-///     Finds command classes and checks them (plan, section 5.3) — the reflection scan of <c>RegisterBuiltIns</c> in AnalyseTool,
-///     but every problem is collected and reported at startup instead of being skipped with a log line.
+///     Finds command classes by reflection and checks them: every problem is collected and reported at startup instead of
+///     being skipped with a log line.
 /// </summary>
 internal static class CommandScanner
 {

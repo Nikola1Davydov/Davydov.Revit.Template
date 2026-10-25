@@ -5,7 +5,7 @@ using Microsoft.Extensions.Hosting;
 namespace Davydov.Revit.Addin.ServiceDefaults.Configuration;
 
 /// <summary>
-///     Provides extension methods for <see cref="IHostApplicationBuilder" /> to add the configuration layers (plan, section 11).
+///     Provides extension methods for <see cref="IHostApplicationBuilder" /> to add the configuration layers.
 /// </summary>
 public static class ConfigurationRegistration
 {

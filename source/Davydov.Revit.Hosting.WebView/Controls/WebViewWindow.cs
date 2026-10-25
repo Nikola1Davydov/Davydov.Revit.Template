@@ -20,7 +20,7 @@ public sealed class WebViewWindowOptions
 }
 
 /// <summary>
-///     The one window class for every page (plan, section 9) — AnalyseTool had a copy of it per page.
+///     The one window class for every page: a page is a route of ClientApp, not a window class of its own.
 /// </summary>
 /// <remarks>Modeless and owned by the Revit main window, so it stays above Revit and closes with it.</remarks>
 [PublicAPI]

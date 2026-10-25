@@ -10,7 +10,7 @@ using Microsoft.Web.WebView2.Core;
 namespace Davydov.Revit.Hosting.WebView.Transport;
 
 /// <summary>
-///     A message of the page ↔ host protocol (plan, section 2: Request / Response / Progress with <c>id</c>, as in AnalyseTool).
+///     A message of the page ↔ host protocol: request, cancel, progress and response, matched by <c>id</c>.
 /// </summary>
 /// <remarks>
 ///     <list type="bullet">
@@ -28,7 +28,7 @@ internal sealed record WebMessage(
     CommandError? Error = null);
 
 /// <summary>
-///     Connects one WebView to the command pipeline, as <c>WebView2Transport</c> in AnalyseTool.
+///     Connects one WebView to the command pipeline.
 /// </summary>
 /// <remarks>
 ///     <para>

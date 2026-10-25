@@ -5,7 +5,7 @@ using Microsoft.Web.WebView2.Core;
 namespace Davydov.Revit.Hosting.WebView.Runtime;
 
 /// <summary>
-///     One WebView2 environment for the whole add-in (plan, section 9) — AnalyseTool created one in each of five windows.
+///     One WebView2 environment for the whole add-in: one browser process and one user data folder for every window.
 /// </summary>
 /// <remarks>
 ///     The user data folder is <c>%LOCALAPPDATA%\&lt;add-in&gt;\WebView2</c>: the Revit folder is not writable.

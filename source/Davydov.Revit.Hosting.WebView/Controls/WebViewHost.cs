@@ -34,7 +34,7 @@ internal sealed record WebViewServices(
 
 /// <summary>
 ///     The WebView surface of <see cref="WebViewWindow" /> and of the dock pane: environment, settings, transport,
-///     recovery and the optional navigation guard live here once (plan, section 9).
+///     recovery and the optional navigation guard live here once.
 /// </summary>
 /// <remarks>
 ///     Initializes on <c>Loaded</c>: WebView2 needs a window handle. Without the WebView2 runtime it shows a message with a
@@ -148,7 +148,7 @@ public sealed partial class WebViewHost : ContentControl, IDisposable
         }
     }
 
-    /// <summary>Only our own pages may load: any page in the WebView can call commands (plan, section 9).</summary>
+    /// <summary>Only our own pages may load: any page in the WebView can call commands.</summary>
     private void RestrictNavigation(CoreWebView2 core)
     {
         core.NavigationStarting += (_, args) =>

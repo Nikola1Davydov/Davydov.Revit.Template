@@ -46,14 +46,14 @@ public static partial class Host
         //Davydov.Revit.Hosting: dispatcher, Revit lifetime, notifications. Before the first await — see AddRevitHosting
         builder.AddRevitHosting(application);
 
-        //Commands and their pipeline (plan, section 5); the document rule is the add-in's own (section 7)
+        //Commands and their pipeline; the document rule is the add-in's own (ActiveDocument, DocumentCheckMiddleware)
         builder.Services.AddScoped<ActiveDocument>();
         builder.AddRevitCommands(commands => commands
             .FromAssemblyOf<Application>()
             .UseCommandLogging()
             .Use<DocumentCheckMiddleware>());
 
-        //Davydov.Revit.Hosting.WebView: windows and the dock pane with the ClientApp pages (plan, section 9)
+        //Davydov.Revit.Hosting.WebView: windows and the dock pane with the ClientApp pages
         builder.AddWebView(application, webView => webView
             .DockPane(new Guid("CA1A2580-51FE-4199-A6B5-62760DC2D3CC"), "Davydov.Revit.Addin", "/dock")
             .AllowAnyNavigation());
@@ -91,7 +91,7 @@ public static partial class Host
     /// <exception cref="System.InvalidOperationException">No service of type <typeparamref name="T" /> is registered.</exception>
     /// <remarks>
     ///     Only for ribbon buttons: Revit creates <c>ExternalCommand</c> classes itself, so they cannot take
-    ///     constructor dependencies (plan, section 4.1). Everything else uses constructor injection.
+    ///     constructor dependencies. Everything else uses constructor injection.
     /// </remarks>
     public static T GetService<T>() where T : class
     {

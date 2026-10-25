@@ -41,7 +41,7 @@ public class Application : AsyncExternalApplication          // Toolkit; соз�
 {
     public override async Task OnStartupAsync()
     {
-        await Host.StartAsync(Application);                    // исключение дойдёт до Launcher → запасная панель (раздел 8)
+        await Host.StartAsync(Application);                    // исключение дойдёт до Launcher → лог и окно ошибки Revit (раздел 8)
         CreateRibbon();
     }
 
@@ -154,7 +154,7 @@ Davydov.Revit.Addin/
 │  ├─ Davydov.Revit.Addin.ServiceDefaults/              Nice3point: логирование, диагностика, сериализация (+ наши слои конфигурации)
 │  ├─ Davydov.Revit.Hosting/               НАШ модуль, headless: команды, конвейер, IRevitDispatcher, IRevitLifetime, IUserSettings
 │  ├─ Davydov.Revit.Hosting.WebView/       НАШ модуль, WPF: окружение WebView2, WebViewWindow, док-панель, транспорт, revit-bridge (TS)
-│  └─ Davydov.Revit.Addin.Launcher/                     все версии Revit: Davydov.Revit.Addin.Launcher.addin, App.cs (свой ALC), Proxies.cs, Fallback/ (решение 26)
+│  └─ Davydov.Revit.Addin.Launcher/                     все версии Revit: Davydov.Revit.Addin.Launcher.addin, App.cs (свой ALC), Proxies.cs, StartupLog.cs (решение 26)
 ├─ tests/
 │  ├─ Davydov.Revit.Addin.Tests/                        TUnit + Nice3point.TUnit.Revit — внутри Revit
 │  └─ Davydov.Revit.Hosting.Tests/         TUnit — без Revit
@@ -343,7 +343,7 @@ public interface IRevitLifetime
 - `SafeGetTypes`: при `ReflectionTypeLoadException` берём загрузившиеся типы, остальное — в лог с именем
   недостающей зависимости (урок AnalyseTool).
 - Правила имён (раздел 5.2) живут в одном месте — `CommandNaming` в модуле.
-- **Проверки при `builder.Build()`** — до первого клика, с понятным текстом; при ошибке — запасная панель (раздел 8):
+- **Проверки при `builder.Build()`** — до первого клика, с понятным текстом; при ошибке — сбой старта: Launcher пишет `startup-error.txt` и отдаёт исключение Revit, решение 36 (раздел 8):
 
   | Проверка | Пример сообщения |
   | --- | --- |
@@ -519,20 +519,20 @@ Revit 2025–2027 → Davydov.Revit.Addin.Launcher.addin (в проекте Laun
   ├─ reflection — ОДИН раз: создать Davydov.Revit.Addin.Application внутри ALC и вызвать его OnStartup / OnShutdown
   │   (Toolkit в чужом ALC сам отключает ResolveHelper — проверено по исходникам)
   ├─ Davydov.Revit.Addin.Application.OnStartupAsync: Host.StartAsync() → CreateRibbon()
-  └─ ошибка на любом шаге → запасная панель «Ошибка загрузки — открыть лог» без ALC (урок BugsCommand)
+  └─ ошибка на любом шаге → Launcher пишет startup-error.txt и пробрасывает исключение — Revit сам показывает окно ошибки
 ```
 
 - Манифест один — в Launcher, без `ManifestSettings`: Launcher без зависимостей грузится в контекст Revit, всё
   остальное живёт в нашем ALC. `DeployAddin` включён в Launcher (SDK требует его в проекте с манифестом); Launcher
   ссылается на приложение ради порядка сборки и `deps.json`, поэтому в папку плагина попадает всё.
 - Имя класса приложения (`Davydov.Revit.Addin.Application`) Launcher берёт из константы (`PluginInfo`), которую шаблон
-  подставляет при создании проекта. Если класс не найден — запасная панель с понятным текстом, а не пустая лента.
+  подставляет при создании проекта. Если класс не найден — понятное исключение: Revit покажет его текст, полный текст — в `startup-error.txt`.
 - **Сделано в фазе 1:**
   - зависимости для ALC берутся из `deps.json` **Launcher** (у проектов, на которые ссылаются, своего `deps.json` в
     папке плагина нет), как в AnalyseTool;
-  - запасная панель — только в Launcher: `Application.OnStartupAsync` не ловит исключения, они доходят до Launcher,
-    который пишет `%LOCALAPPDATA%\<плагин>\logs\<год>\startup-error.txt` и ставит кнопку открытия этого файла на
-    вкладку Add-Ins;
+  - сбой старта: `Application.OnStartupAsync` не ловит исключения, они доходят до Launcher, который пишет
+    `%LOCALAPPDATA%\<плагин>\logs\<год>\startup-error.txt` и пробрасывает исключение плагина (не обёртку
+    reflection-вызова) — Revit сам показывает окно «не удалось запустить внешнее приложение» с его текстом (решение 36);
   - Launcher сообщает модулю свой путь и пространство имён прокси через `AppContext.SetData` (данные процесса, видны
     из обоих контекстов без общих типов) — их читает `LauncherInfo` в приложении (`Infrastructure/Ribbon/`, рядом с Launcher, решение 35); ключи — с именем плагина;
   - иконки — встроенные ресурсы (`EmbeddedResource`) и `Icons.WithIcons(...)`: pack URI ищет сборку по имени и мог
@@ -757,12 +757,12 @@ Nice3point (`global.json` → Microsoft.Testing.Platform).
 1. **Скелет на Nice3point** — структура `MultiProjectSolution` (раздел 3) для Revit 2025–2027: `Nice3point.Revit.Sdk`,
    `.slnx` с `Debug.R25…Release.R27`, `global.json`, CPM (`CentralPackageFloatingVersionsEnabled`), `Application.cs` +
    `Host.cs` + `ServiceDefaults` (с `ValidateOnBuild` и JSON-резолвером), `Davydov.Revit.Addin.Launcher` с `.addin`, своим ALC и
-   прокси, обёртки `AddButton<T>` / `SetAvailability<T>`, одна кнопка, запасная панель, `DeployAddin`/`LaunchRevit`
+   прокси, обёртки `AddButton<T>` / `SetAvailability<T>`, одна кнопка, ~~запасная панель~~ (решение 36), `DeployAddin`/`LaunchRevit`
    в Launcher. Из `.csproj` Nice3point переносится `EnableDynamicLoading=true`; `IsRepackable=false` (изоляция есть).
    Проверить: Launcher и ALC рядом с AnalyseTool на 2025, 2026 и 2027 (раздел 8), WebView2 в изолированном контексте,
    Hot Reload.
    Готово, когда: кнопка на ленте пишет в журнал Revit на 2025, 2026 и 2027; при исключении в `Host.StartAsync`
-   появляется запасная панель; плагин работает рядом с AnalyseTool; без прокси в Launcher кнопка даёт понятную
+   ~~появляется запасная панель~~ (с решения 36 — `startup-error.txt` и окно ошибки Revit); плагин работает рядом с AnalyseTool; без прокси в Launcher кнопка даёт понятную
    ошибку при старте.
 2. **Модуль `Davydov.Revit.Hosting`, основа** — `IRevitDispatcher` поверх `AsyncExternalEvent`, `IRevitLifetime`,
    слои конфигурации в ServiceDefaults и `IUserSettings`, `IUserNotifier`, окружение `Development`/`Production`.
@@ -910,3 +910,4 @@ _(открытых вопросов нет)_
 | 33 | **Этот репозиторий — шаблон, его релиз — NuGet-пакет шаблона**, а не MSI плагина-заглушки `Davydov.Revit.Addin`. `build/`, `install/`, `Compile.yml` здесь — содержимое шаблона, собранное и проверенное на заглушке. Выпуск (`publish`, `PublishRelease.yml`, CHANGELOG, GitHub Release с MSI) — содержимое шаблона для плагинов из него; делается и проверяется в фазе 6 вместе с релизом самого шаблона. | 2026-10-25 |
 | 34 | **Защита навигации WebView — включена по умолчанию** (вместо решения 32): стартовый шаблон безопасен сразу — переходы только на свой адрес (virtual host в Release, dev-сервер в Debug), чужие `http(s)` и новые окна — в системный браузер, сообщения в конвейер — только со своего origin. Выключает `AddWebView(application, w => w.AllowAnyNavigation())`; `RestrictNavigation()` убран. | 2026-10-25 |
 | 35 | **Лента и связь с Launcher — в приложении, не в модуле.** `RibbonButtons` (`AddButton<T>`, `SetAvailability<T>`), `LauncherInfo` и `DocumentAvailability` / `ProjectAvailability` — в `Davydov.Revit.Addin/Infrastructure/Ribbon/` (обвязка приложения; там же `Diagnostics/`). Это не конвейер, а связка плагина со своим Launcher: договор о ключах `AppContext` (`PluginInfo` ↔ `LauncherInfo`) лежит целиком в исходниках плагина и не разойдётся по версиям, когда модули уйдут в NuGet (решение 24). `Davydov.Revit.Hosting` — без `Nice3point.Revit.Extensions`. | 2026-10-25 |
+| 36 | **Без запасной панели.** `FallbackRibbon` (кнопка «Startup error» на вкладке Add-Ins, открывавшая лог) убран. При сбое старта Launcher пишет `startup-error.txt` и пробрасывает исключение плагина; Revit сам сообщает об отказе внешнего приложения и пишет его в журнал. | 2026-10-25 |

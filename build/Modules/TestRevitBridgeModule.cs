@@ -12,7 +12,7 @@ namespace Build.Modules;
 /// </summary>
 /// <remarks>
 ///     After <see cref="CompileClientAppModule" />: ClientApp links revit-bridge into its node_modules, and two npm installs at
-///     once over the same folder fail with EBUSY. Our tests only, not part of the template (plan, phase 6).
+///     once over the same folder fail with EBUSY. Our tests only, not part of the template.
 /// </remarks>
 [DependsOn<CompileClientAppModule>]
 public sealed class TestRevitBridgeModule : Module

@@ -7,7 +7,7 @@ using Sourcy.DotNet;
 namespace Build.Modules;
 
 /// <summary>
-///     Build the pages of ClientApp: <c>npm ci</c> (<c>npm install</c> locally), then <c>npm run build</c> (TypeScript check and Vite, plan, section 10).
+///     Build the pages of ClientApp: <c>npm ci</c> (<c>npm install</c> locally), then <c>npm run build</c> (TypeScript check and Vite).
 /// </summary>
 public sealed class CompileClientAppModule : Module
 {

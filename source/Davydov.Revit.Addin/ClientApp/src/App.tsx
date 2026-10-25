@@ -15,7 +15,7 @@ function useRoute() {
   return route;
 }
 
-/** The sample page: the active document and one command with progress (plan, section 10). */
+/** The sample page: the active document and one command with progress. */
 export function App() {
   const route = useRoute();
   const document = useActiveDocument();

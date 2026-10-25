@@ -32,7 +32,7 @@ type Pending = {
   onProgress?: (progress: ProgressInfo) => void;
 };
 
-/** The bridge over WebView2 messaging, as RevitBridge.ts in AnalyseTool: requests and responses matched by `id`. */
+/** The bridge over WebView2 messaging: requests and responses matched by `id`. */
 export function createWebViewBridge(webview: WebViewLike): RevitBridge {
   const pending = new Map<string, Pending>();
   let sequence = 0;
