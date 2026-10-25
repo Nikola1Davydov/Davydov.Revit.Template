@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { bridge, type InvokeOptions, type ProgressInfo } from "revit-bridge";
 
-// React hooks over revit-bridge (plan, section 10). The page always works with the active document (section 7):
+// React hooks over revit-bridge. The page always works with the active document:
 // every call carries its key in the Document header, and a call made with data of another document gets
 // document_changed — RevitQueryProvider then re-reads the active document and the queries of the new one run.
 

@@ -10,7 +10,7 @@ using Nice3point.Revit.Toolkit.Decorators;
 namespace Microsoft.Extensions.Hosting;
 
 /// <summary>
-///     Registers the Davydov.Revit.Hosting.WebView module (plan, section 9).
+///     Registers the Davydov.Revit.Hosting.WebView module.
 /// </summary>
 [PublicAPI]
 public static class WebViewRegistration
@@ -97,7 +97,7 @@ public sealed class WebViewBuilder
     }
 
     /// <summary>
-    ///     Turns off the navigation protection, which is on by default (plan, section 9): any page may then load in the
+    ///     Turns off the navigation protection, which is on by default: any page may then load in the
     ///     WebView and send commands.
     /// </summary>
     /// <remarks>

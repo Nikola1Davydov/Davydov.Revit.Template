@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Microsoft.Extensions.Hosting;
 
 /// <summary>
-///     Registers the base services of the Davydov.Revit.Hosting module (plan, phase 2).
+///     Registers the base services of the Davydov.Revit.Hosting module.
 /// </summary>
 [PublicAPI]
 public static class RevitHostingRegistration

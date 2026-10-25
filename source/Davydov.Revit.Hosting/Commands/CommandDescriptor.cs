@@ -27,7 +27,7 @@ public sealed record CommandDescriptor(
     CommandInvoker Invoke);
 
 /// <summary>
-///     The naming rules of commands (plan, section 5.2) — the only place they live.
+///     The naming rules of commands — the only place they live.
 /// </summary>
 [PublicAPI]
 public static class CommandNaming

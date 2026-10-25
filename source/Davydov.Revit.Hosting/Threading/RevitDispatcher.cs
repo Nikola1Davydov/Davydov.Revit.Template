@@ -4,8 +4,7 @@ using Nice3point.Revit.Toolkit.External;
 namespace Davydov.Revit.Hosting.Threading;
 
 /// <summary>
-///     <see cref="IRevitDispatcher" /> over one long-lived <c>AsyncRequestExternalEvent</c> from Nice3point.Revit.Toolkit,
-///     the counterpart of <c>RevitTaskHub</c> in AnalyseTool.
+///     <see cref="IRevitDispatcher" /> over one long-lived <c>AsyncRequestExternalEvent</c> from Nice3point.Revit.Toolkit.
 /// </summary>
 /// <remarks>
 ///     Must be created in a valid Revit API context (<c>ExternalEvent.Create</c> requires it), so the module creates it while

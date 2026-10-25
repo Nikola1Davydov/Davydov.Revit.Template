@@ -4,7 +4,7 @@ using Davydov.Revit.Hosting.Commands;
 namespace Davydov.Revit.Addin.Features.Documents;
 
 /// <summary>
-///     The active document for the pages: its key goes into the <c>Document</c> header of their calls (plan, section 7).
+///     The active document for the pages: its key goes into the <c>Document</c> header of their calls.
 /// </summary>
 /// <remarks>Call it without the <c>Document</c> header: it asks which document is active, it does not work with one.</remarks>
 [Command(Description = "Returns the key and title of the active document, or null when no document is open.")]

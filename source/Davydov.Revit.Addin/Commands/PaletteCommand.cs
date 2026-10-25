@@ -5,7 +5,7 @@ using Nice3point.Revit.Toolkit.External;
 namespace Davydov.Revit.Addin.Commands;
 
 /// <summary>
-///     Shows the sample page in the dock pane of the add-in (plan, section 8).
+///     Shows the sample page in the dock pane of the add-in.
 /// </summary>
 [UsedImplicitly]
 [Transaction(TransactionMode.Manual)]

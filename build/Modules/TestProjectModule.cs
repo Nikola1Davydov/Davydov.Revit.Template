@@ -10,7 +10,7 @@ namespace Build.Modules;
 /// <summary>
 ///     Run the tests without Revit (Davydov.Revit.Hosting.Tests) for each supported Revit configuration, in CI as well.
 /// </summary>
-/// <remarks>Our tests only, not part of the template (plan, phase 6).</remarks>
+/// <remarks>Our tests only, not part of the template.</remarks>
 [DependsOn<ResolveConfigurationsModule>]
 [DependsOn<CompileProjectModule>]
 public sealed class TestProjectModule : Module

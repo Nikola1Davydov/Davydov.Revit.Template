@@ -10,7 +10,7 @@ namespace Davydov.Revit.Addin;
 ///     Provides the Revit application entry point.
 /// </summary>
 /// <remarks>
-///     Revit loads Davydov.Revit.Addin.Launcher, which creates this class inside its isolated AssemblyLoadContext (plan, section 8).
+///     Revit loads Davydov.Revit.Addin.Launcher, which creates this class inside its isolated AssemblyLoadContext.
 ///     An exception here reaches the Launcher, which shows a fallback panel with the startup log.
 /// </remarks>
 [UsedImplicitly]

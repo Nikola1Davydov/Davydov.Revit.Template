@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 namespace Davydov.Revit.Addin.Infrastructure.Diagnostics;
 
 /// <summary>
-///     Debug-only check of phase 2 (docs/manual-tests.md): a background service with ordinary <c>await</c>s waits for Revit to
+///     Debug-only startup check: a background service with ordinary <c>await</c>s waits for Revit to
 ///     initialize, then reads the model through <see cref="IRevitDispatcher" />. If Revit starts normally, startup did not hang.
 /// </summary>
 internal sealed partial class StartupProbe(IRevitLifetime revitLifetime, IRevitDispatcher revit, ILogger<StartupProbe> logger) : BackgroundService

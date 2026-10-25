@@ -15,7 +15,7 @@ public sealed record CommandRequest(string Command, JsonElement Payload, string 
 
     /// <summary>
     ///     Gets the values that travel with the call outside the payload, as HTTP headers. The module does not read them; the
-    ///     add-in's middleware does — for example the document the caller's data came from (plan, section 7).
+    ///     add-in's middleware does — for example the document the caller's data came from.
     /// </summary>
     public IReadOnlyDictionary<string, string> Headers { get; init; } = NoHeaders;
 
@@ -38,7 +38,7 @@ public static class CommandSources
     /// <summary>A WebView2 window or dock pane.</summary>
     public const string WebView = "webview2";
 
-    /// <summary>An AI client through MCP (phase 7).</summary>
+    /// <summary>An AI client through MCP; reserved, no transport yet.</summary>
     public const string Mcp = "mcp";
 }
 

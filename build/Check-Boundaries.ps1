@@ -1,17 +1,17 @@
 #Requires -Version 7
 <#
 .SYNOPSIS
-    Checks the project boundaries of the plan (docs/PLAN.md, sections 3.1 and 7).
+    Checks the project boundaries: who may reference whom, and the rules of the add-in code below.
 
 .DESCRIPTION
-    - References: every project in source/ may reference only the projects and packages of its row in table 3.1;
+    - References: every project in source/ may reference only the projects and packages of its row in $Rules;
       a new project fails until it gets a row here.
     - Davydov.Revit.Hosting is headless: no UseWPF / UseWindowsForms, no System.Windows, no MessageBox.
     - Davydov.Revit.Addin: Features/ and Services/ use no System.Windows (UI goes through IUserNotifier and the
       frontend) and no ActiveUIDocument (the document goes through ActiveDocument). Exceptions:
       Services/Documents/ActiveDocument.cs and a line marked "// AllowActiveDocument: <reason>".
     - Davydov.Revit.Addin.Launcher uses no types of the add-in or the modules: they would load into Revit's
-      context and bypass the isolation (decision 26). Names in strings, as in PluginInfo, are fine.
+      context and bypass the isolation. Names in strings, as in PluginInfo, are fine.
 
     Prints every violation as "file:line: rule" and exits with 1 when there is any.
 
@@ -24,7 +24,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-# Table 3.1: what each project may reference. Packages are wildcard patterns.
+# What each project may reference. Packages are wildcard patterns.
 $Common = @('JetBrains.Annotations', 'Polyfill')
 $RevitApi = @('Nice3point.Revit.Api.*')
 $Rules = [ordered]@{
@@ -91,7 +91,7 @@ $projects = Get-ChildItem (Join-Path $Root 'source') -Recurse -Filter *.csproj -
 foreach ($project in $projects) {
     $name = $project.BaseName
     if (-not $Rules.Contains($name)) {
-        Add-Violation $project.FullName 1 "the project has no row in build/Check-Boundaries.ps1 (plan, table 3.1)"
+        Add-Violation $project.FullName 1 "the project has no row in build/Check-Boundaries.ps1"
         continue
     }
 
@@ -101,21 +101,21 @@ foreach ($project in $projects) {
     foreach ($reference in $xml.SelectNodes('//ProjectReference')) {
         $target = [System.IO.Path]::GetFileNameWithoutExtension($reference.Include)
         if ($target -notin $rule.Projects) {
-            Add-Violation $project.FullName 1 "$name must not reference the project $target (plan, table 3.1)"
+            Add-Violation $project.FullName 1 "$name must not reference the project $target"
         }
     }
 
     foreach ($reference in $xml.SelectNodes('//PackageReference')) {
         $package = $reference.Include
         if (-not ($rule.Packages | Where-Object { $package -like $_ })) {
-            Add-Violation $project.FullName 1 "$name must not reference the package $package (plan, table 3.1)"
+            Add-Violation $project.FullName 1 "$name must not reference the package $package"
         }
     }
 
     if ($rule.Headless) {
         foreach ($property in 'UseWPF', 'UseWindowsForms') {
             if ($xml.SelectSingleNode("//$property")?.InnerText -eq 'true') {
-                Add-Violation $project.FullName 1 "$name is headless: no $property (plan, table 3.1)"
+                Add-Violation $project.FullName 1 "$name is headless: no $property"
             }
         }
     }
@@ -126,21 +126,26 @@ $source = Join-Path $Root 'source'
 $noWpf = '\bSystem\.Windows\b|\bMessageBox\b'
 
 Test-Code (Join-Path $source 'Davydov.Revit.Hosting') $noWpf `
-    'Davydov.Revit.Hosting is headless: no System.Windows or MessageBox (plan, table 3.1)'
+    'Davydov.Revit.Hosting is headless: no System.Windows or MessageBox'
 
 foreach ($folder in 'Features', 'Services') {
     $path = Join-Path $source "Davydov.Revit.Addin/$folder"
 
     Test-Code $path $noWpf `
-        "no System.Windows in $folder/: UI goes through IUserNotifier and the frontend (plan, table 3.1)"
+        "no System.Windows in $folder/: UI goes through IUserNotifier and the frontend"
 
     Test-Code $path '\bActiveUIDocument\b' `
-        "no ActiveUIDocument in ${folder}/: take the document from ActiveDocument, or mark the line with // AllowActiveDocument: <reason> (plan, section 7)" `
+        "no ActiveUIDocument in ${folder}/: take the document from ActiveDocument, or mark the line with // AllowActiveDocument: <reason>" `
         { param($file, $line) $file.Name -eq 'ActiveDocument.cs' -or $line -match '//\s*AllowActiveDocument:\s*\S' }
 }
 
-Test-Code (Join-Path $source 'Davydov.Revit.Addin.Launcher') '\bDavydov\.Revit\.(Hosting|Addin(?!\.Launcher\b))\b' `
-    'the Launcher must not use types of the add-in or the modules: they would load outside its AssemblyLoadContext (decision 26)'
+# Plain names, not a hand-escaped regex: dotnet new renames the add-in name only where it is written as is
+$addinName = 'Davydov.Revit.Addin'
+$modulesName = 'Davydov.Revit.Hosting'
+$foreignTypes = "\b(?:$([regex]::Escape($modulesName))|$([regex]::Escape($addinName))(?!\.Launcher\b))\b"
+
+Test-Code (Join-Path $source "$addinName.Launcher") $foreignTypes `
+    'the Launcher must not use types of the add-in or the modules: they would load outside its AssemblyLoadContext and bypass the isolation'
 
 if ($violations.Count -gt 0) {
     $violations | ForEach-Object { Write-Host $_ }

@@ -7,7 +7,7 @@ using Davydov.Revit.Addin.Launcher.Proxies;
 namespace Davydov.Revit.Addin.Launcher;
 
 /// <summary>
-///     The entry point Revit loads (plan, section 8). Loads the add-in into its own <see cref="PluginLoadContext" />
+///     The entry point Revit loads. Loads the add-in into its own <see cref="PluginLoadContext" />
 ///     and forwards startup and shutdown to the add-in application created inside it.
 /// </summary>
 public sealed class App : IExternalApplication

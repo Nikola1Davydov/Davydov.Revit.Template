@@ -24,7 +24,7 @@ public static class SerializerRegistration
         ///     <para>The options reach a consumer through <see cref="Microsoft.Extensions.Options.IOptions{TOptions}" />.</para>
         ///     <para>
         ///         Types listed in <see cref="ApplicationSerializerContext" /> use source-generated metadata;
-        ///         every other type falls back to reflection, so command payloads need no manual registration (plan, section 5.1).
+        ///         every other type falls back to reflection, so command payloads need no manual registration.
         ///     </para>
         /// </remarks>
         public TBuilder ConfigureJsonSerializer()

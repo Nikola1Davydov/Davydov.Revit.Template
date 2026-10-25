@@ -1,8 +1,8 @@
 <Project Sdk="Nice3point.Revit.Sdk">
 
     <!--
-        Our module (plan, section 9): the WebView2 environment, navigation guard, WebViewWindow, the dock pane and the
-        transport between the page and the command pipeline. The only place of WPF in our modules (plan, section 3.1).
+        Our module: the WebView2 environment, navigation guard, WebViewWindow, the dock pane and the
+        transport between the page and the command pipeline. The only place of WPF in our modules.
     -->
 
     <PropertyGroup>

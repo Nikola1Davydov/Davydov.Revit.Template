@@ -2,7 +2,7 @@ using Autodesk.Revit.Attributes;
 
 namespace Davydov.Revit.Addin.Launcher.Proxies;
 
-// One line per ribbon button and per availability class (plan, section 8).
+// One line per ribbon button and per availability class.
 // The proxy name must match the add-in class name; the add-in checks this at startup.
 
 [Transaction(TransactionMode.Manual)] public sealed class SamplePageCommand : ProxyCommand;

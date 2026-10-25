@@ -4,7 +4,7 @@ using Nice3point.Revit.Extensions.UI;
 namespace Davydov.Revit.Addin.Infrastructure.Ribbon;
 
 /// <summary>
-///     Ribbon helpers that keep buttons inside the Launcher's isolated context (plan, section 8).
+///     Ribbon helpers that keep buttons inside the Launcher's isolated context.
 /// </summary>
 /// <remarks>
 ///     Revit creates a button's command class itself, from the assembly path and type name of the button.

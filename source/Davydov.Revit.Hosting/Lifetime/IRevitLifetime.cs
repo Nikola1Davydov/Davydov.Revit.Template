@@ -3,7 +3,7 @@ using Autodesk.Revit.ApplicationServices;
 namespace Davydov.Revit.Hosting.Lifetime;
 
 /// <summary>
-///     Revit readiness on top of the standard <c>IHostApplicationLifetime</c> (plan, section 6).
+///     Revit readiness on top of the standard <c>IHostApplicationLifetime</c>.
 /// </summary>
 /// <remarks>
 ///     <c>IHostApplicationLifetime.ApplicationStarted</c> keeps its usual meaning — the host has started, still inside

@@ -4,7 +4,7 @@ using Davydov.Revit.Hosting.Commands;
 namespace Davydov.Revit.Addin.Features.Sample;
 
 /// <summary>
-///     The command of the sample page: reads the model in batches and reports progress (plan, section 10).
+///     The command of the sample page: reads the model in batches and reports progress.
 /// </summary>
 [Command(Description = "Counts the model elements of the active document by category, in batches with progress.")]
 public sealed class CountElementsByCategory(ActiveDocument document) : ICommand<IReadOnlyList<CategoryCount>>

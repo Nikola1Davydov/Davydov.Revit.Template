@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { CommandError, ErrorCodes } from "revit-bridge";
 import { activeDocumentKey } from "./hooks";
 
-// No push events in the template (decision 31): the page learns about another active document from the
+// No push events in the template: the page learns about another active document from the
 // document_changed answer to its next call, and re-reads the active document then.
 function onError(error: unknown) {
   if (error instanceof CommandError && (error.code === ErrorCodes.DocumentChanged || error.code === ErrorCodes.NoDocument)) {

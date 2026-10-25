@@ -4,11 +4,11 @@ using Microsoft.Extensions.Options;
 namespace Davydov.Revit.Hosting.Commands;
 
 /// <summary>
-///     Sends a command from C# code — typically a ribbon button (plan, section 8).
+///     Sends a command from C# code — typically a ribbon button.
 /// </summary>
 /// <remarks>
 ///     Does not wait for the command: a button runs inside a Revit external command, and the command itself goes through an
-///     external event that could not run until the button returns (lesson of <c>InvokeSavedCommand</c> in AnalyseTool).
+///     external event that could not run until the button returns: waiting would deadlock Revit.
 ///     Failures are shown with <c>IUserNotifier</c>.
 /// </remarks>
 [PublicAPI]

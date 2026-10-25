@@ -5,7 +5,7 @@ namespace Davydov.Revit.Addin.Launcher.Fallback;
 
 /// <summary>
 ///     Shows a single «startup error» button on the Add-Ins tab when the add-in failed to start, instead of an empty
-///     ribbon (lesson from <c>BugsCommand</c> in AnalyseTool). Needs nothing but the Launcher itself.
+///     ribbon, which would leave the user without a hint. Needs nothing but the Launcher itself: the add-in is what failed.
 /// </summary>
 internal static class FallbackRibbon
 {

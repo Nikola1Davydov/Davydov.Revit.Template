@@ -38,7 +38,7 @@ public static class LoggingRegistration
         /// <returns>The <typeparamref name="TBuilder" /> for chaining.</returns>
         /// <remarks>
         ///     The Revit journal keeps the whole session and may be sent to Autodesk with an error report,
-        ///     so release builds write only warnings and errors there (plan, section 11).
+        ///     so release builds write only warnings and errors there.
         ///     The details for support go to the file log instead: <c>%LOCALAPPDATA%\{Application}\logs\{Revit version}\log-{date}.txt</c>.
         /// </remarks>
         public TBuilder AddLoggingDefaults()
@@ -66,7 +66,7 @@ public static class LoggingRegistration
         }
 
         /// <summary>
-        ///     Adds the daily rolling file log (decision 23).
+        ///     Adds the daily rolling file log.
         /// </summary>
         /// <returns>The <typeparamref name="TBuilder" /> for chaining.</returns>
         /// <remarks>

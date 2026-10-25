@@ -6,7 +6,7 @@ using Microsoft.Web.WebView2.Core;
 namespace Davydov.Revit.Hosting.WebView.ClientApp;
 
 /// <summary>
-///     The <c>ClientApp</c> configuration section: where the pages come from (plan, section 9).
+///     The <c>ClientApp</c> configuration section: where the pages come from.
 /// </summary>
 [PublicAPI]
 public sealed class ClientAppOptions

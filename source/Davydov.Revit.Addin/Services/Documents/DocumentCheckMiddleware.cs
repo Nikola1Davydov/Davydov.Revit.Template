@@ -5,7 +5,7 @@ namespace Davydov.Revit.Addin.Services.Documents;
 
 /// <summary>
 ///     Fixes the document of the call from the caller's <see cref="Header" /> header, so <see cref="ActiveDocument" /> refuses
-///     to work when the user has switched to another document since the caller loaded its data (plan, section 7).
+///     to work when the user has switched to another document since the caller loaded its data.
 /// </summary>
 /// <remarks>Without the header — a ribbon button — the document is the one active at the command's first access.</remarks>
 public sealed class DocumentCheckMiddleware(ActiveDocument document) : ICommandMiddleware

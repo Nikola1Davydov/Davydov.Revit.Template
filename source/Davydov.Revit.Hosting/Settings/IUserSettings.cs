@@ -6,7 +6,7 @@ using Microsoft.Extensions.Configuration;
 namespace Davydov.Revit.Hosting.Settings;
 
 /// <summary>
-///     Writes user settings — the layer of the configuration that the user changes in the interface (plan, section 11).
+///     Writes user settings — the layer of the configuration that the user changes in the interface.
 /// </summary>
 /// <remarks>
 ///     Read settings as usual, through <c>IOptions&lt;T&gt;</c> or <c>IOptionsMonitor&lt;T&gt;</c>: the file is reloaded on change,

@@ -3,7 +3,7 @@ using Autodesk.Revit.UI;
 namespace Davydov.Revit.Hosting.Threading;
 
 /// <summary>
-///     The only way to reach the Revit API from code outside a Revit API context (plan, section 4).
+///     The only way to reach the Revit API from code outside a Revit API context.
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -12,7 +12,7 @@ namespace Davydov.Revit.Hosting.Threading;
 ///     </para>
 ///     <para>
 ///         Which document to work with is the add-in's decision: it wraps the dispatcher in its own service, as
-///         <c>ActiveDocument</c> in the template (plan, section 7).
+///         <c>ActiveDocument</c> in the template.
 ///     </para>
 /// </remarks>
 [PublicAPI]

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <!--
-        The .msi builder (plan, phase 5), as install/ in Nice3point Revit Templates: build/ runs it with the version and
+        The .msi builder, as install/ in Nice3point Revit Templates: build/ runs it with the version and
         the publish folders of the Launcher. Product name, vendor and UpgradeCode come from build/appsettings.json.
     -->
 

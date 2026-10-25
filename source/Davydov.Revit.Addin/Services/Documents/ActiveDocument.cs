@@ -5,7 +5,7 @@ using Davydov.Revit.Hosting.Threading;
 namespace Davydov.Revit.Addin.Services.Documents;
 
 /// <summary>
-///     The document a pipeline command works with: the active one, fixed for the whole call (plan, section 7).
+///     The document a pipeline command works with: the active one, fixed for the whole call.
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -58,7 +58,7 @@ public sealed class ActiveDocument(IRevitDispatcher dispatcher)
 
     /// <summary>
     ///     Runs <paramref name="work" /> over <paramref name="items" /> in batches, one Revit call per batch: between batches
-    ///     Revit gets control back, so the page shows progress and the user can cancel (plan, section 5.5).
+    ///     Revit gets control back, so the page shows progress and the user can cancel.
     /// </summary>
     /// <remarks>
     ///     Every batch checks the document like any access. Writing in batches means one transaction — one undo step — per
