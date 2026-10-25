@@ -1,7 +1,7 @@
 using System.IO;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using Autodesk.Revit.UI;
-using Davydov.Revit.Addin.Launcher.Fallback;
 using Davydov.Revit.Addin.Launcher.Proxies;
 
 namespace Davydov.Revit.Addin.Launcher;
@@ -39,17 +39,20 @@ public sealed class App : IExternalApplication
             var result = _application.OnStartup(application);
             if (result != Result.Succeeded)
             {
-                FallbackRibbon.Create(application, StartupLog.Write(application, $"{PluginInfo.ApplicationType}.OnStartup returned {result}."));
+                StartupLog.Write(application, $"{PluginInfo.ApplicationType}.OnStartup returned {result}.");
             }
+
+            return result;
         }
         catch (Exception exception)
         {
+            // Revit reports a failed external application itself; the file keeps the full exception for support.
+            // The add-in's own exception, not the TargetInvocationException of the reflection call, so Revit shows its text
             var actual = exception is TargetInvocationException { InnerException: { } inner } ? inner : exception;
-            FallbackRibbon.Create(application, StartupLog.Write(application, actual.ToString()));
+            StartupLog.Write(application, actual.ToString());
+            ExceptionDispatchInfo.Capture(actual).Throw();
+            throw;
         }
-
-        // The fallback panel needs a loaded Launcher, so startup never reports failure to Revit
-        return Result.Succeeded;
     }
 
     /// <inheritdoc />

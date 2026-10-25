@@ -11,7 +11,7 @@ namespace Davydov.Revit.Addin;
 /// </summary>
 /// <remarks>
 ///     Revit loads Davydov.Revit.Addin.Launcher, which creates this class inside its isolated AssemblyLoadContext.
-///     An exception here reaches the Launcher, which shows a fallback panel with the startup log.
+///     An exception here reaches the Launcher: it writes the startup log and lets Revit report the failure.
 /// </remarks>
 [UsedImplicitly]
 public class Application : AsyncExternalApplication

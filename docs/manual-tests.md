@@ -55,8 +55,8 @@
 | 4 | Без открытого документа посмотреть на кнопку «Active document» (Debug) | Кнопка неактивна |
 | 5 | Открыть или создать проект, нажать «Active document» | Через ~5 с — окно с названием документа (с фазы 3 кнопка идёт через конвейер, см. ниже) |
 | 6 | Рядом с AnalyseTool: нажать «Status», затем пользоваться AnalyseTool | Оба плагина работают; у нашего — по-прежнему свой контекст и свои версии зависимостей |
-| 7 | Сломать старт: временно бросить исключение в `Host.StartAsync`, собрать, запустить Revit | На вкладке «Add-Ins» — панель «Davydov.Revit.Addin: startup error», кнопка открывает `%LOCALAPPDATA%\Davydov.Revit.Addin\logs\<год>\startup-error.txt` с текстом исключения |
-| 8 | Удалить строку `StatusCommand` из `Launcher/Proxies.cs`, собрать, запустить Revit | Запасная панель; в логе — «The Launcher has no proxy for … Add this line to Proxies.cs …» |
+| 7 | Сломать старт: временно бросить исключение в `Host.StartAsync`, собрать, запустить Revit | Окно Revit об ошибке внешнего приложения с текстом исключения; полный текст — в `%LOCALAPPDATA%\Davydov.Revit.Addin\logs\<год>\startup-error.txt` |
+| 8 | Удалить строку `StatusCommand` из `Launcher/Proxies.cs`, собрать, запустить Revit | Окно Revit об ошибке; в `startup-error.txt` — «The Launcher has no proxy for … Add this line to Proxies.cs …» |
 | 9 | Отладка: запустить Launcher-проект из IDE (`LaunchRevit`), поставить точку останова в `StatusCommand.Execute`, нажать кнопку | Остановка в точке; проверить, работают ли Hot Reload / Edit and Continue в изолированном контексте — записать результат в CLAUDE.md шаблона |
 
 После шагов 7–8 вернуть код обратно.
