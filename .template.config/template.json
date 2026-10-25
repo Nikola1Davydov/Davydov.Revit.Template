@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json.schemastore.org/template",
+  "author": "Nikolai Davydov",
+  "name": "Revit add-in with WebView2 (Davydov)",
+  "description": "Revit 2025–2027 add-in: Nice3point SDK and Toolkit, an isolated Launcher, a command pipeline and a React UI in WebView2",
+  "shortName": "davydov-revit",
+  "identity": "Davydov.Revit.AddIn.Solution",
+  "defaultName": "RevitAddin",
+  "sourceName": "Davydov.Revit.Addin",
+  "preferNameDirectory": true,
+  "classifications": [
+    "Revit",
+    "Desktop",
+    "AddIn",
+    "Solution"
+  ],
+  "tags": {
+    "type": "solution",
+    "editorTreatAs": "solution",
+    "language": "C#",
+    "platform": ".NET"
+  },
+  "guids": [
+    "A2A3303D-540B-4C7D-9969-77C9FF461888",
+    "CA1A2580-51FE-4199-A6B5-62760DC2D3CC",
+    "BADACEF9-1500-4A6F-9559-F921B1DEBEB5"
+  ],
+  "symbols": {
+    "vendor": {
+      "type": "parameter",
+      "datatype": "text",
+      "displayName": "Vendor",
+      "description": "The vendor: VendorId of the .addin, the manufacturer of the installer and of the Autodesk bundle",
+      "defaultValue": "Davydov"
+    },
+    "vendorIdElement": {
+      "type": "derived",
+      "valueSource": "vendor",
+      "valueTransform": "vendorIdElement",
+      "replaces": "<VendorId>Davydov</VendorId>"
+    },
+    "vendorNameSetting": {
+      "type": "derived",
+      "valueSource": "vendor",
+      "valueTransform": "vendorNameSetting",
+      "replaces": "\"Name\": \"Davydov\""
+    },
+    "kebabName": {
+      "type": "derived",
+      "valueSource": "name",
+      "valueTransform": "kebabCase",
+      "replaces": "davydov-revit-addin"
+    },
+    "pipelineRun": {
+      "type": "generated",
+      "generator": "constant",
+      "parameters": {
+        "value": "run: dotnet run -c Release"
+      },
+      "replaces": "run: dotnet run -c Release -- test"
+    },
+    "pipelineStep": {
+      "type": "generated",
+      "generator": "constant",
+      "parameters": {
+        "value": "name: Compile solution"
+      },
+      "replaces": "name: Compile and test"
+    }
+  },
+  "forms": {
+    "kebabCase": {
+      "identifier": "chain",
+      "steps": [
+        "lowerCase",
+        "dotsToDashes"
+      ]
+    },
+    "lowerCase": {
+      "identifier": "lowerCaseInvariant"
+    },
+    "dotsToDashes": {
+      "identifier": "replace",
+      "pattern": "\\.",
+      "replacement": "-"
+    },
+    "vendorIdElement": {
+      "identifier": "replace",
+      "pattern": "^(.*)$",
+      "replacement": "<VendorId>$1</VendorId>"
+    },
+    "vendorNameSetting": {
+      "identifier": "replace",
+      "pattern": "^(.*)$",
+      "replacement": "\"Name\": \"$1\""
+    }
+  },
+  "SpecialCustomOperations": {
+    "*.cs": {
+      "operations": []
+    },
+    "*.slnx": {
+      "operations": [
+        {
+          "type": "conditional",
+          "configuration": {
+            "style": "block",
+            "startToken": "<!--",
+            "endToken": "-->",
+            "pseudoEndToken": "-- >"
+          }
+        }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "exclude": [
+            ".git/**",
+            ".vs/**",
+            ".idea/**",
+            ".claude/**",
+            ".template.config/**",
+            "template/**",
+            "tests/**",
+            "docs/**",
+            "build/Modules/Test*.cs",
+            "build/RepositoryModules.cs",
+            "LICENSE",
+            "package-lock.json",
+            "output/**",
+            "TestResults/**",
+            "**/bin/**",
+            "**/obj/**",
+            "**/node_modules/**",
+            "**/ClientApp/dist/**",
+            "**/*.user",
+            "README.md",
+            ".github/workflows/Template.yml"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "./template/content/",
+      "target": "./"
+    }
+  ],
+  "primaryOutputs": [
+    {
+      "path": "README.md"
+    }
+  ]
+}

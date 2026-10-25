@@ -17,9 +17,11 @@ internal static class PluginInfo
 
     /// <summary>
     ///     <see cref="AppContext" /> keys read by <c>Davydov.Revit.Hosting.Ribbon.LauncherInfo</c>; keep both sides in sync.
+    ///     <see cref="AppContext" /> is process-wide, so the keys end with the add-in name: two add-ins made from the
+    ///     template must not read each other's Launcher.
     /// </summary>
-    public const string LauncherPathKey = "Davydov.Revit.Launcher.Path";
+    public const string LauncherPathKey = $"Davydov.Revit.Launcher.Path:{Name}";
 
     /// <inheritdoc cref="LauncherPathKey" />
-    public const string ProxyNamespaceKey = "Davydov.Revit.Launcher.ProxyNamespace";
+    public const string ProxyNamespaceKey = $"Davydov.Revit.Launcher.ProxyNamespace:{Name}";
 }

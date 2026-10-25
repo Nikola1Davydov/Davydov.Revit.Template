@@ -31,6 +31,18 @@
 | 5 | Удалить через «Программы и компоненты» | Папки и `.addin` в `Addins\<год>` удалены |
 | 6 | `…-MultiUser.msi` (от администратора) | 2025, 2026 — в `%ProgramData%\Autodesk\Revit\Addins`, 2027 — в `%ProgramFiles%\Autodesk\Revit\Addins` |
 
+## Шаблон (фаза 6)
+
+`dotnet pack template/Davydov.Revit.Templates.csproj -o <папка>`, затем `dotnet new install <папка>\Davydov.Revit.Templates.<версия>.nupkg`:
+
+| # | Шаг | Ожидается |
+| --- | --- | --- |
+| 1 | `dotnet new davydov-revit -n Acme.Revit.Tools --vendor Acme`, `git init`, коммит, `dotnet run -c Release --project build -- pack` | Сборка, `Acme.Revit.Tools-…-SingleUser.msi`, `…-MultiUser.msi`, `Acme.Revit.Tools.bundle.zip` |
+| 2 | Создать второй плагин (`-n Contoso.Revit.Tools`), собрать оба в `Debug.R26` | В `Addins6` два `.addin` и две папки Launcher |
+| 3 | Запустить Revit 2026 | Две вкладки на ленте, кнопки обоих работают; «Status» каждого — свой `Load context` (`Acme.Revit.Tools`, `Contoso.Revit.Tools`) |
+| 4 | «Sample page» в каждом | Свои окна; логи и `usersettings` — в своих папках `%LOCALAPPDATA%` и `%AppData%` |
+| 5 | `dotnet new uninstall Davydov.Revit.Templates` | — |
+
 ## Фаза 1 — скелет
 
 Для каждой версии Revit 2025, 2026, 2027:

@@ -59,4 +59,18 @@ dotnet run -c Release --project build -- pack
 ставится WiX 7, его EULA (Open Source Maintenance Fee) принимается командой `wix eula accept wix7`. Имя продукта,
 UpgradeCode и производитель — в `build/appsettings.json`.
 
+## Шаблон
+
+Этот репозиторий и есть шаблон `dotnet new davydov-revit`: `.template.config/template.json` и пакет
+`template/Davydov.Revit.Templates.csproj`. В новый проект не попадают тесты, `docs/`, `template/`, `LICENSE` и
+`Template.yml`; имена `Davydov.Revit.Addin` и GUID-ы меняются, README — `template/content/README.md`. Локально:
+
+```
+dotnet pack template/Davydov.Revit.Templates.csproj -o artifacts
+dotnet new install artifacts/Davydov.Revit.Templates.0.1.0.nupkg
+dotnet new davydov-revit -n Acme.Revit.Tools --vendor Acme
+```
+
+`.github/workflows/Template.yml` на каждом PR создаёт проект из шаблона и собирает его.
+
 Проверки в живом Revit — [docs/manual-tests.md](docs/manual-tests.md).

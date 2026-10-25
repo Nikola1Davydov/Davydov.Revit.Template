@@ -848,6 +848,19 @@ Nice3point (`global.json` → Microsoft.Testing.Platform).
    репозитории — не здесь: релиз плагина-заглушки смысла не имеет.
    **Тесты в шаблон не входят — они только для этого репозитория:** папка `tests/`, тесты `revit-bridge`, модули
    `build/Modules/Test*` и блок `test` в `build/Program.cs`; в `Compile.yml` шаблона — `dotnet run -c Release` без `test`.
+   **Сделано — 6.1, шаблон и его пакет (2026-10-25):** репозиторий и есть шаблон (а не отдельные исходники с `#if`,
+   как у Nice3point): `.template.config/template.json` — `davydov-revit`, `sourceName` `Davydov.Revit.Addin` (меняет и
+   `Davydov_Revit_Addin` у Sourcy), производное `davydov-revit-addin` (`package.json`), новые `guids` (`AddInId`, GUID
+   док-панели, UpgradeCode), параметр `--vendor` (`VendorId`, `Vendor:Name`). Что только для репозитория:
+   исключения в `sources` (`tests/`, `docs/`, `template/`, `LICENSE`, `build/RepositoryModules.cs`, `Test*`-модули,
+   `Template.yml`); блоки `<!--#if (false)-->` в `.slnx`; тестовые модули — в partial-методе `AddRepositoryModules`
+   (без реализации вызов исчезает); в `Compile.yml` строку `-- test` меняет символ шаблона. Шаблонизатор не трогает
+   `#if` в C# (`"*.cs": { "operations": [] }`), иначе вырезал бы весь `#if DEBUG`. README плагина —
+   `template/content/README.md`. Пакет — `template/Davydov.Revit.Templates.csproj` (`PackageType Template`, `dotnet
+   pack`). Ключи `AppContext` Launcher → модуль теперь с именем плагина: два плагина в одном Revit не читают чужой
+   Launcher. `.github/workflows/Template.yml` (только здесь): пакет → `dotnet new` → нет заглушек и лишних файлов →
+   `dotnet run -c Release --project build` в созданном проекте.
+   **Дальше:** 6.2 `PublishRelease.yml` для плагинов, 6.3 релиз пакета шаблона, 6.4 CLAUDE.md и навыки, 6.5 TS-типы.
 7. **Опционально** — MCP, Roslyn-скрипты (переносятся из AnalyseTool как модули `AddMcp()` и т.п.).
    Системы сторонних расширений нет (решение 12).
 

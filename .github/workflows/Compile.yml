@@ -38,7 +38,6 @@ jobs:
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'Directory.Packages.props') }}
           restore-keys: ${{ runner.os }}-nuget-
 
-      # The template of phase 6 runs the pipeline without arguments; "test" adds our tests (plan, phase 6)
       - name: Compile and test
         run: dotnet run -c Release -- test
         working-directory: "build"

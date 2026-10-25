@@ -7,16 +7,17 @@ namespace Davydov.Revit.Hosting.Ribbon;
 ///     Describes the Launcher that loaded the add-in into its isolated <see cref="AssemblyLoadContext" /> (plan, section 8).
 /// </summary>
 /// <remarks>
-///     The Launcher publishes its location through <see cref="AppContext" /> data: it is process-wide,
-///     so both load contexts see it without sharing any type.
+///     The Launcher publishes its location through <see cref="AppContext" /> data: it is process-wide, so both load
+///     contexts see it without sharing any type. Process-wide is also why the keys carry the add-in name — the name of
+///     the load context — so two add-ins made from the template do not read each other's Launcher.
 /// </remarks>
 [PublicAPI]
 public sealed class LauncherInfo
 {
-    /// <summary>The <see cref="AppContext" /> key of the Launcher assembly path.</summary>
+    /// <summary>The <see cref="AppContext" /> key of the Launcher assembly path, followed by <c>:</c> and the add-in name.</summary>
     public const string PathKey = "Davydov.Revit.Launcher.Path";
 
-    /// <summary>The <see cref="AppContext" /> key of the namespace that holds the proxy classes.</summary>
+    /// <summary>The <see cref="AppContext" /> key of the namespace that holds the proxy classes, followed by <c>:</c> and the add-in name.</summary>
     public const string ProxyNamespaceKey = "Davydov.Revit.Launcher.ProxyNamespace";
 
     private Assembly? _assembly;
@@ -67,7 +68,10 @@ public sealed class LauncherInfo
 
     private static LauncherInfo? Resolve()
     {
-        if (AppContext.GetData(PathKey) is not string path || AppContext.GetData(ProxyNamespaceKey) is not string proxyNamespace)
+        // The Launcher names the load context after the add-in; outside it (a test host) the keys are not set
+        var addinName = AssemblyLoadContext.GetLoadContext(typeof(LauncherInfo).Assembly)?.Name;
+        if (AppContext.GetData($"{PathKey}:{addinName}") is not string path ||
+            AppContext.GetData($"{ProxyNamespaceKey}:{addinName}") is not string proxyNamespace)
         {
             return null;
         }

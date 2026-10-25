@@ -1,0 +1,67 @@
+# This repository only (the template leaves it out): checks that a project made from the template builds (plan, phase 6)
+name: Check template
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  windows:
+    name: windows-2025
+    runs-on: windows-2025
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Cache packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-template-${{ hashFiles('**/*.csproj', 'Directory.Packages.props') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
+      - name: Pack and install the template
+        shell: pwsh
+        run: |
+          dotnet pack template/Davydov.Revit.Templates.csproj -o "$env:RUNNER_TEMP/template"
+          dotnet new install (Get-ChildItem "$env:RUNNER_TEMP/template/*.nupkg").FullName
+
+      - name: Create a project from the template
+        shell: pwsh
+        run: dotnet new davydov-revit -n Acme.Revit.Tools --vendor Acme -o "$env:RUNNER_TEMP/Acme.Revit.Tools"
+
+      - name: Check the project has no placeholder names and no repository-only files
+        shell: pwsh
+        working-directory: ${{ runner.temp }}/Acme.Revit.Tools
+        run: |
+          $leftovers = Get-ChildItem -Recurse -File | Select-String -Pattern 'Davydov\.Revit\.Addin|Davydov_Revit_Addin|davydov-revit-addin|<VendorId>Davydov<'
+          $extra = 'tests', 'docs', 'template', 'LICENSE', 'build/RepositoryModules.cs', '.github/workflows/Template.yml' | Where-Object { Test-Path $_ }
+          $leftovers | ForEach-Object { "$($_.Path):$($_.LineNumber): $($_.Line.Trim())" }
+          $extra | ForEach-Object { "Not part of the template: $_" }
+          if ($leftovers -or $extra) { exit 1 }
+
+      # On a build server GitVersion needs exactly one remote, and the new repository has none: a fixed version skips
+      # GitVersion here (the CI of this repository checks it)
+      - name: Compile the project
+        shell: pwsh
+        working-directory: ${{ runner.temp }}/Acme.Revit.Tools
+        env:
+          Build__Version: 0.0.1-template.1
+        run: |
+          git init -q -b main
+          git add -A
+          git -c user.name=ci -c user.email=ci@example.invalid commit -q -m "Created from the template"
+          dotnet run -c Release --project build
