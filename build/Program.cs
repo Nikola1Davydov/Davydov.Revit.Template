@@ -26,12 +26,18 @@ if (args.Contains("pack"))
     builder.Services.AddModule<CreateInstallerModule>();
 }
 
-// Our tests only: the template of phase 6 leaves this block and the Test modules out (plan, phase 6)
-if (args.Contains("test"))
-{
-    builder.Services.AddModule<TestProjectModule>();
-    builder.Services.AddModule<TestRevitModule>();
-    builder.Services.AddModule<TestRevitBridgeModule>();
-}
+AddRepositoryModules(builder.Services, args);
 
 await builder.Build().RunAsync();
+
+internal partial class Program
+{
+    /// <summary>
+    ///     Adds the modules of this repository only — our tests — implemented in build/RepositoryModules.cs.
+    /// </summary>
+    /// <remarks>
+    ///     Projects made from the template get neither that file nor the tests (plan, phase 6): a partial method without
+    ///     an implementation compiles away together with its call.
+    /// </remarks>
+    static partial void AddRepositoryModules(IServiceCollection services, string[] args);
+}

@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!--
+        The NuGet package of the template (plan, phase 6): dotnet new install Davydov.Revit.Templates.
+        The repository root is the template content; .template.config/template.json decides what a new project gets
+        (no tests, no docs, new names and GUIDs). This project only leaves out build artifacts, git and IDE files.
+        Build it with dotnet pack, not as part of the solution.
+    -->
+
+    <PropertyGroup>
+        <PackageType>Template</PackageType>
+        <PackageId>Davydov.Revit.Templates</PackageId>
+        <Version>0.1.0</Version>
+        <Title>Revit add-in templates (Davydov)</Title>
+        <Authors>Nikolai Davydov</Authors>
+        <Description>dotnet new davydov-revit: a Revit 2025–2027 add-in with Nice3point SDK and Toolkit, an isolated Launcher, a command pipeline and a React UI in WebView2</Description>
+        <PackageTags>autodesk;revit;addin;template;webview2</PackageTags>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <RepositoryUrl>https://github.com/Nikola1Davydov/Davydov.Revit.Template</RepositoryUrl>
+
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <IncludeContentInPack>true</IncludeContentInPack>
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <ContentTargetFolders>content</ContentTargetFolders>
+        <EnableDefaultItems>false</EnableDefaultItems>
+        <!-- .github, .gitignore, .editorconfig and .template.config are part of the template -->
+        <NoDefaultExcludes>true</NoDefaultExcludes>
+        <!-- A template package has no lib folder by design; build/Check-Boundaries.ps1 is template content, not a NuGet install script -->
+        <NoWarn>$(NoWarn);NU5128;NU5110;NU5111</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Content Include="..\**\*"
+                 Exclude="..\.git\**;..\.vs\**;..\.idea\**;..\.claude\**;..\**\bin\**;..\**\obj\**;..\**\node_modules\**;..\**\ClientApp\dist\**;..\output\**;..\TestResults\**;..\**\*.user;..\template\*.csproj"
+                 PackagePath="content\Davydov.Revit.AddIn\"/>
+        <Compile Remove="**\*"/>
+    </ItemGroup>
+
+</Project>

@@ -15,10 +15,13 @@
     <File Path="README.md"/>
     <File Path="build/appsettings.json"/>
   </Folder>
+  <!--#if (false)-->
+  <!-- This repository only: projects made from the template have no docs and tests (plan, phase 6) -->
   <Folder Name="/Docs/">
     <File Path="docs/PLAN.md"/>
     <File Path="docs/manual-tests.md"/>
   </Folder>
+  <!--#endif-->
   <Folder Name="/Automation/">
     <Project Path="build/Build.csproj">
       <BuildType Solution="Debug.R25|*" Project="Debug"/>
@@ -38,6 +41,18 @@
       <BuildType Solution="Release.R27|*" Project="Debug"/>
       <Build Project="false"/>
     </Project>
+    <!--#if (false)-->
+    <!-- The template package: this repository only (plan, phase 6) -->
+    <Project Path="template/Davydov.Revit.Templates.csproj">
+      <BuildType Solution="Debug.R25|*" Project="Debug"/>
+      <BuildType Solution="Debug.R26|*" Project="Debug"/>
+      <BuildType Solution="Debug.R27|*" Project="Debug"/>
+      <BuildType Solution="Release.R25|*" Project="Debug"/>
+      <BuildType Solution="Release.R26|*" Project="Debug"/>
+      <BuildType Solution="Release.R27|*" Project="Debug"/>
+      <Build Project="false"/>
+    </Project>
+    <!--#endif-->
   </Folder>
   <Folder Name="/Modules/">
     <Project Path="source/Davydov.Revit.Hosting/Davydov.Revit.Hosting.csproj"/>
@@ -46,8 +61,11 @@
   <Project Path="source/Davydov.Revit.Addin.Launcher/Davydov.Revit.Addin.Launcher.csproj"/>
   <Project Path="source/Davydov.Revit.Addin.ServiceDefaults/Davydov.Revit.Addin.ServiceDefaults.csproj"/>
   <Project Path="source/Davydov.Revit.Addin/Davydov.Revit.Addin.csproj"/>
+  <!--#if (false)-->
+  <!-- This repository only: projects made from the template have no docs and tests (plan, phase 6) -->
   <Folder Name="/Tests/">
     <Project Path="tests/Davydov.Revit.Addin.Tests/Davydov.Revit.Addin.Tests.csproj"/>
     <Project Path="tests/Davydov.Revit.Hosting.Tests/Davydov.Revit.Hosting.Tests.csproj"/>
   </Folder>
+  <!--#endif-->
 </Solution>
