@@ -15,7 +15,7 @@ AnalyseTool: WebView2-интерфейс и конвейер команд в с�
 | Часть | Откуда | Что даёт |
 | --- | --- | --- |
 | **Основа** | Nice3point | `Nice3point.Revit.Sdk` (конфигурации `Debug.R25…Release.R27`, TFM, `DeployAddin`, `LaunchRevit`), `Nice3point.Revit.Toolkit` (external events, док-панели, базовые классы приложения и команд), `Nice3point.Revit.Extensions` (лента), `Host.cs` + `ServiceDefaults` (Generic Host, логирование в журнал Revit), ModularPipelines (сборка), WixSharp (установщик), TUnit + `Nice3point.TUnit.Revit` (тесты) |
-| **Наши модули** | AnalyseTool + этот план | `Davydov.Revit.Hosting` — конвейер команд, `IRevitDispatcher`, жизненный цикл Revit, настройки, кнопки ленты (правило документа — в приложении, раздел 7); `Davydov.Revit.Hosting.WebView` — WebView2-окна и док-панель, мост к React; `Davydov.Revit.Addin.Launcher` — изоляция зависимостей на всех версиях Revit (решение 26) |
+| **Наши модули** | AnalyseTool + этот план | `Davydov.Revit.Hosting` — конвейер команд, `IRevitDispatcher`, жизненный цикл Revit, настройки (правило документа и кнопки ленты — в приложении, разделы 7 и 8, решение 35); `Davydov.Revit.Hosting.WebView` — WebView2-окна и док-панель, мост к React; `Davydov.Revit.Addin.Launcher` — изоляция зависимостей на всех версиях Revit (решение 26) |
 
 Наши модули подключаются так же, как у Nice3point подключается `AddServiceDefaults()` — методами-расширениями
 `IHostApplicationBuilder`, в стиле ASP.NET Core / .NET Aspire:
@@ -143,6 +143,9 @@ Davydov.Revit.Addin/
 │  │  ├─ Application.cs                    AsyncExternalApplication: Host + лента
 │  │  ├─ Host.cs                           Generic Host + AddServiceDefaults + наши модули
 │  │  ├─ Commands/                         кнопки ленты — ExternalCommand (как у Nice3point)
+│  │  ├─ Infrastructure/                   обвязка, которую обычно не трогают:
+│  │  │  ├─ Ribbon/                        AddButton / SetAvailability через прокси Launcher, LauncherInfo, доступность (решение 35)
+│  │  │  └─ Diagnostics/                   StartupProbe, DevOptions — только Debug
 │  │  ├─ Features/<Срез>/                  команды конвейера (ICommand), их сервисы и модели (как срезы AnalyseTool)
 │  │  ├─ Services/Documents/               ActiveDocument + DocumentCheckMiddleware — правило документа (раздел 7)
 │  │  ├─ Resources/Icons/
@@ -174,11 +177,11 @@ Davydov.Revit.Addin/
 
 | Проект | Ссылается на | Правила |
 | --- | --- | --- |
-| `Davydov.Revit.Hosting` | Revit API (только компиляция), Nice3point.Revit.Toolkit, Nice3point.Revit.Extensions (обёртки ленты `AddButton<T>`), Microsoft.Extensions.* | **headless**: без `UseWPF`, `System.Windows`, `MessageBox` |
+| `Davydov.Revit.Hosting` | Revit API (только компиляция), Nice3point.Revit.Toolkit, Microsoft.Extensions.* | **headless**: без `UseWPF`, `System.Windows`, `MessageBox` |
 | `Davydov.Revit.Hosting.WebView` | Hosting, WebView2, Toolkit | единственное место WPF и диалогов наших модулей |
 | `Davydov.Revit.Addin.ServiceDefaults` | Toolkit, Nice3point.Revit.Logging, Microsoft.Extensions.Hosting, Serilog (файловый лог, решение 23), Davydov.Revit.Hosting (`AddUserSettings`) | как в Nice3point |
 | `Davydov.Revit.Addin.Launcher` | только Revit API; на приложение — **только** ради порядка сборки и `deps.json` | в коде Launcher нельзя использовать типы приложения и модулей: они загрузились бы в default ALC в обход изоляции |
-| `Davydov.Revit.Addin` (приложение) | всё перечисленное, Nice3point.Revit.Extensions | в `Features/` и `Services/` — без `System.Windows` (UI — через `IUserNotifier` и фронтенд); документ — через `ActiveDocument`, не `ActiveUIDocument` (раздел 7) |
+| `Davydov.Revit.Addin` (приложение) | всё перечисленное, Nice3point.Revit.Extensions (лента и обёртки `Infrastructure/Ribbon/`) | в `Features/` и `Services/` — без `System.Windows` (UI — через `IUserNotifier` и фронтенд); документ — через `ActiveDocument`, не `ActiveUIDocument` (раздел 7) |
 | `tests/*` | что тестируют | — |
 
 ## 4. API — сводно
@@ -261,7 +264,7 @@ public interface IWindows
 // её toast во фронтенде. Вызывается из любого потока, не ждёт закрытия диалога.
 public interface IUserNotifier { void Error(string title, string message); void Info(string title, string message); }
 
-// Кнопки ленты (раздел 8) — обёртки над Nice3point.Revit.Extensions
+// Кнопки ленты (раздел 8) — обёртки над Nice3point.Revit.Extensions; в приложении, Infrastructure/Ribbon/ (решение 35)
 public static class RibbonButtons
 {
     // Как panel.AddPushButton<T>(), но кнопка указывает на прокси с тем же именем в Launcher (раздел 8).
@@ -531,7 +534,7 @@ Revit 2025–2027 → Davydov.Revit.Addin.Launcher.addin (в проекте Laun
     который пишет `%LOCALAPPDATA%\<плагин>\logs\<год>\startup-error.txt` и ставит кнопку открытия этого файла на
     вкладку Add-Ins;
   - Launcher сообщает модулю свой путь и пространство имён прокси через `AppContext.SetData` (данные процесса, видны
-    из обоих контекстов без общих типов) — их читает `LauncherInfo` в `Davydov.Revit.Hosting`;
+    из обоих контекстов без общих типов) — их читает `LauncherInfo` в приложении (`Infrastructure/Ribbon/`, рядом с Launcher, решение 35); ключи — с именем плагина;
   - иконки — встроенные ресурсы (`EmbeddedResource`) и `Icons.WithIcons(...)`: pack URI ищет сборку по имени и мог
     бы загрузить вторую копию приложения вне ALC;
   - `DeployAddin` — только в Debug-конфигурациях; Release публикует в `bin\Release.R2x\publish`;
@@ -598,7 +601,7 @@ public sealed class ProjectAvailability : ProxyAvailability;
 - **Стабильный id кнопки.** По внутреннему имени кнопки Revit привязывает горячие клавиши, панель быстрого доступа и
   `PostCommand`. `AddPushButton<T>` берёт имя `T.FullName` — **вместе с пространством имён**: переименование класса и
   перенос в другую папку или namespace сбрасывают привязки пользователя. Один класс кнопки — одна кнопка в панели.
-- **Доступность** — обычные `IExternalCommandAvailability` (`ProjectAvailability`, `DocumentAvailability` — в модуле),
+- **Доступность** — обычные `IExternalCommandAvailability` (`ProjectAvailability`, `DocumentAvailability` — в приложении, `Infrastructure/Ribbon/`),
   ставятся через `SetAvailability<T>()` (класса `ExternalCommandAvailability` в текущем Toolkit нет), тоже через прокси
   в Launcher. Условие обязано быть быстрым, исключение в нём считается «недоступно».
 - **Док-панель** регистрируется при старте через `DockablePaneProvider.Register(...)` из Toolkit (Revit разрешает это
@@ -624,10 +627,10 @@ AdWindows (как у кнопок расширений AnalyseTool) не тре�
   Тот же контент — в док-панели (раздел 8).
 - **Контент:** Release — `SetVirtualHostNameToFolderMapping("app.<tool>.local", dist)`; Debug — dev-сервер Vite
   (`ClientApp:DevServerUrl` в настройках, по умолчанию `http://localhost:5173`).
-- **Защита навигации — по желанию, выключена по умолчанию (решение 32).** Любая страница, загруженная в WebView,
-  может вызывать команды через `postMessage`, поэтому чужой сайт в окне получил бы доступ к модели. Если страницы
-  показывают то, что разработчик не контролирует (ссылки в changelog, HTML пользователя), защита включается одной
-  строкой `AddWebView(application, w => w.RestrictNavigation())`:
+- **Защита навигации — включена по умолчанию (решение 34).** Любая страница, загруженная в WebView, может вызывать
+  команды через `postMessage`, поэтому чужой сайт в окне получил бы доступ к модели. Выключается одной строкой
+  `AddWebView(application, w => w.AllowAnyNavigation())` — только если плагин должен показывать в своём окне другой,
+  доверенный сайт:
   - `NavigationStarting` — переход на любой адрес, кроме своего virtual host (или dev-сервера в Debug), отменяется,
     `http(s)`-адрес открывается в системном браузере;
   - `NewWindowRequested` — `Handled = true`, `http(s)`-ссылки открываются в системном браузере;
@@ -793,13 +796,13 @@ Nice3point (`global.json` → Microsoft.Testing.Platform).
    `ActiveDocument.InvokeBatchedAsync`.
    Готово, когда: кнопка в React вызывает команду и показывает результат и прогресс (на `InvokeBatchedAsync`);
    после смены документа вызов с данными старого документа получает `document_changed`, и страница
-   перезапрашивает данные нового; с `RestrictNavigation()` переход по внешней ссылке открывает системный браузер.
+   перезапрашивает данные нового; с защитой навигации переход по внешней ссылке открывает системный браузер.
    **Сделано (код собран, проверка в Revit — `docs/manual-tests.md`, фаза 4):** модуль `Davydov.Revit.Hosting.WebView`
    (`builder.AddWebView(application, w => w.DockPane(id, title, route))`): одно окружение WebView2 на плагин,
    `ClientAppSource` (dev-сервер в Development, `dist` через `https://app.<плагин>.local` в Release, hash-маршруты),
-   `WebViewHost` (настройки, восстановление после сбоя процесса, защита навигации по `RestrictNavigation()` — по умолчанию выключена,
+   `WebViewHost` (настройки, восстановление после сбоя процесса, защита навигации — с решения 34 включена по умолчанию, `AllowAnyNavigation()` выключает,
    сообщение без runtime), `WebViewWindow` и `IWindows` (одно окно на маршрут, док-панель через `DockablePaneProvider`
-   из Toolkit), `WebViewTransport` (протокол request / cancel / progress / response; с `RestrictNavigation()` — только свой origin). В приложении:
+   из Toolkit), `WebViewTransport` (протокол request / cancel / progress / response; с защитой навигации — только свой origin). В приложении:
    `GetActiveDocument`, `CountElementsByCategory` на `ActiveDocument.InvokeBatchedAsync`, кнопки «Sample page» и
    «Palette». Фронтенд: `revit-bridge` (TS, без зависимостей, mock-режим, 8 тестов Vitest), `ClientApp` (Vite 8 +
    React 19 + TanStack Query, хуки в `src/revit/`, страница-пример; в браузере без Revit — на моках). Тесты
@@ -903,5 +906,7 @@ _(открытых вопросов нет)_
 | 29 | **Документ — правило приложения, не модуля.** В `Davydov.Revit.Hosting` нет реестра документов, `DocumentRef`, `DocumentKind`, `DocumentBinding` и `context.Document`; в запросе — общие `Headers`, модуль их не читает. В приложении: scoped-сервис `ActiveDocument` (активный документ, зафиксированный на всю команду; сменился — `document_changed`) и `DocumentCheckMiddleware` (ключ из заголовка `Document` фиксирует документ заранее). Плагин может заменить их своими. Выполнения в неактивном документе и закреплённых окон нет. `[Command]` — только имя и `Description`: `ReadOnly`, `Destructive`, `RequiresActiveDocument`, `DocumentKind` и `CommandMetadata` убраны. | 2026-10-24 |
 | 30 | ~~**События Revit — дело приложения, не модуля.** Механизма событий в `Davydov.Revit.Hosting` нет: ни `AddRevitEvents`, ни `IAppEventHandler<T>` / `IRevitEventHandler<TArgs>`, ни `RevitUpdater`, ни debounce и `ForwardToClient`. Плагин подписывается сам (`+=`) по правилам раздела 6; во фронтенд публикует через `IClientEvents` модуля WebView. От модуля — только `IRevitLifetime`. Пример `ActiveDocumentEvents` — в фазе WebView. Фаза «События» убрана, фазы 5–8 стали 4–7.~~ — заменено решением 31. | 2026-10-25 |
 | 31 | **Событий в шаблоне пока нет вовсе:** ни механизма в модулях, ни примера подписки в приложении (`ActiveDocumentEvents`), ни push во фронтенд (`IClientEvents`, сообщение Event протокола, `useRevitEvent`, `refetchOn`). Смену документа фронтенд узнаёт по ошибке `document_changed` и команде приложения `GetActiveDocument`. `IRevitLifetime` остаётся — это жизненный цикл, а не события. Правила подписки из опыта AnalyseTool — в истории плана (коммит cf395b0, раздел 6); вернёмся к событиям, когда понадобятся. | 2026-10-25 |
-| 32 | **Защита навигации WebView — по желанию, выключена по умолчанию.** `AddWebView(application, w => w.RestrictNavigation())` включает: переходы только на свой адрес (чужие `http(s)` — в системный браузер), новые окна — в системный браузер, сообщения в конвейер — только со своего origin. Без неё WebView ведёт себя как обычно. Настройки WebView (DevTools и контекстное меню только в Debug, без host objects) — всегда. | 2026-10-25 |
+| 32 | ~~**Защита навигации WebView — по желанию, выключена по умолчанию.** `AddWebView(application, w => w.RestrictNavigation())` включает: переходы только на свой адрес (чужие `http(s)` — в системный браузер), новые окна — в системный браузер, сообщения в конвейер — только со своего origin. Без неё WebView ведёт себя как обычно. Настройки WebView (DevTools и контекстное меню только в Debug, без host objects) — всегда.~~ — заменено решением 34. | 2026-10-25 |
 | 33 | **Этот репозиторий — шаблон, его релиз — NuGet-пакет шаблона**, а не MSI плагина-заглушки `Davydov.Revit.Addin`. `build/`, `install/`, `Compile.yml` здесь — содержимое шаблона, собранное и проверенное на заглушке. Выпуск (`publish`, `PublishRelease.yml`, CHANGELOG, GitHub Release с MSI) — содержимое шаблона для плагинов из него; делается и проверяется в фазе 6 вместе с релизом самого шаблона. | 2026-10-25 |
+| 34 | **Защита навигации WebView — включена по умолчанию** (вместо решения 32): стартовый шаблон безопасен сразу — переходы только на свой адрес (virtual host в Release, dev-сервер в Debug), чужие `http(s)` и новые окна — в системный браузер, сообщения в конвейер — только со своего origin. Выключает `AddWebView(application, w => w.AllowAnyNavigation())`; `RestrictNavigation()` убран. | 2026-10-25 |
+| 35 | **Лента и связь с Launcher — в приложении, не в модуле.** `RibbonButtons` (`AddButton<T>`, `SetAvailability<T>`), `LauncherInfo` и `DocumentAvailability` / `ProjectAvailability` — в `Davydov.Revit.Addin/Infrastructure/Ribbon/` (обвязка приложения; там же `Diagnostics/`). Это не конвейер, а связка плагина со своим Launcher: договор о ключах `AppContext` (`PluginInfo` ↔ `LauncherInfo`) лежит целиком в исходниках плагина и не разойдётся по версиям, когда модули уйдут в NuGet (решение 24). `Davydov.Revit.Hosting` — без `Nice3point.Revit.Extensions`. | 2026-10-25 |

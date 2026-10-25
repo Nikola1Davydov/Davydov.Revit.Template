@@ -1,5 +1,5 @@
 #if DEBUG
-namespace Davydov.Revit.Addin.Diagnostics;
+namespace Davydov.Revit.Addin.Infrastructure.Diagnostics;
 
 /// <summary>
 ///     Debug-only user setting to check <c>IUserSettings</c> (docs/manual-tests.md): the value must survive a Revit restart.

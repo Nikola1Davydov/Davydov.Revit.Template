@@ -11,9 +11,9 @@
 | Проект | Что это |
 | --- | --- |
 | `source/Davydov.Revit.Addin.Launcher` | единственная сборка, которую грузит Revit: `.addin`, свой `AssemblyLoadContext`, прокси кнопок |
-| `source/Davydov.Revit.Addin` | приложение: `Application`, `Host`, кнопки (`Commands/`) |
+| `source/Davydov.Revit.Addin` | приложение: `Application`, `Host`, кнопки (`Commands/`) и обвязка (`Infrastructure/`: связь кнопок с Launcher, диагностика Debug) |
 | `source/Davydov.Revit.Addin.ServiceDefaults` | логирование (журнал Revit), диагностика, JSON, проверка DI |
-| `source/Davydov.Revit.Hosting` | наш модуль: кнопки ленты через Launcher (дальше — конвейер команд, документы, события) |
+| `source/Davydov.Revit.Hosting` | наш модуль: конвейер команд, `IRevitDispatcher`, жизненный цикл Revit, настройки |
 
 ## Сборка
 

@@ -82,7 +82,7 @@ public sealed class WebViewBuilder
 {
     internal (Guid Id, string Title, string Route)? Pane { get; private set; }
 
-    internal bool NavigationRestricted { get; private set; }
+    internal bool NavigationRestricted { get; private set; } = true;
 
     /// <summary>
     ///     Registers the one dock pane of the add-in. Every page shows in it by route (<see cref="IWindows.ShowDockPane" />).
@@ -97,16 +97,18 @@ public sealed class WebViewBuilder
     }
 
     /// <summary>
-    ///     Lets only the add-in's own pages load and talk to the pipeline (plan, section 9). Off by default.
+    ///     Turns off the navigation protection, which is on by default (plan, section 9): any page may then load in the
+    ///     WebView and send commands.
     /// </summary>
     /// <remarks>
-    ///     Any page in the WebView can call commands. With this on, a navigation to another address is cancelled and
-    ///     <c>http(s)</c> links — also <c>target="_blank"</c> — open in the system browser; messages from another origin
-    ///     are dropped. Turn it on when the pages show content you do not control: links in a changelog, user HTML, …
+    ///     Any page in the WebView can call commands, so by default only the add-in's own pages load and talk to the
+    ///     pipeline: a navigation to another address is cancelled and <c>http(s)</c> links — also <c>target="_blank"</c> —
+    ///     open in the system browser; messages from another origin are dropped. Turn it off only when the add-in has to
+    ///     show another site inside its own window and that site is trusted.
     /// </remarks>
-    public WebViewBuilder RestrictNavigation()
+    public WebViewBuilder AllowAnyNavigation()
     {
-        NavigationRestricted = true;
+        NavigationRestricted = false;
         return this;
     }
 }

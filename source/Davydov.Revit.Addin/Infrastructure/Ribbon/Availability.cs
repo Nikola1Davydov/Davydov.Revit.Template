@@ -1,6 +1,6 @@
 using Autodesk.Revit.UI;
 
-namespace Davydov.Revit.Hosting.Ribbon;
+namespace Davydov.Revit.Addin.Infrastructure.Ribbon;
 
 /// <summary>
 ///     Enables a button only when a document is open.

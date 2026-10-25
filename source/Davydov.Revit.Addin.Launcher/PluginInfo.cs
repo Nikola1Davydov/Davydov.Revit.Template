@@ -16,7 +16,7 @@ internal static class PluginInfo
     public const string ApplicationType = "Davydov.Revit.Addin.Application";
 
     /// <summary>
-    ///     <see cref="AppContext" /> keys read by <c>Davydov.Revit.Hosting.Ribbon.LauncherInfo</c>; keep both sides in sync.
+    ///     <see cref="AppContext" /> keys read by <c>Davydov.Revit.Addin.Infrastructure.Ribbon.LauncherInfo</c>; keep both sides in sync.
     ///     <see cref="AppContext" /> is process-wide, so the keys end with the add-in name: two add-ins made from the
     ///     template must not read each other's Launcher.
     /// </summary>

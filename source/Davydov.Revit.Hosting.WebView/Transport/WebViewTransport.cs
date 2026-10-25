@@ -36,7 +36,7 @@ internal sealed record WebMessage(
 ///         The pipeline itself runs on the thread pool (<see cref="ICommandExecutor" />).
 ///     </para>
 ///     <para>
-///         With <c>RestrictNavigation()</c> (<paramref name="allowedSource" /> set), messages from any origin but
+///         With the navigation protection on — the default, <paramref name="allowedSource" /> set — messages from any origin but
 ///         <see cref="ClientAppSource.Origin" /> are dropped. Posting to a WebView closed in the middle of a command never throws.
 ///     </para>
 /// </remarks>
