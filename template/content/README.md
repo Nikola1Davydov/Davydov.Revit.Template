@@ -8,9 +8,9 @@ SDK, Toolkit and `Host` + `ServiceDefaults`, an isolated Launcher, a command pip
 | Project | What it is |
 | --- | --- |
 | `source/Davydov.Revit.Addin.Launcher` | the only assembly Revit loads: the `.addin`, its own `AssemblyLoadContext`, proxies of the ribbon buttons (`Proxies.cs`) |
-| `source/Davydov.Revit.Addin` | the add-in: `Application`, `Host`, ribbon buttons (`Commands/`), commands (`Features/`), services (`Services/`), the React app (`ClientApp/`) |
+| `source/Davydov.Revit.Addin` | the add-in: `Application`, `Host`, ribbon buttons (`Commands/`) plumbing you rarely touch (`Infrastructure/`: the ribbon link to the Launcher, Debug diagnostics), commands (`Features/`), services (`Services/`), the React app (`ClientApp/`) |
 | `source/Davydov.Revit.Addin.ServiceDefaults` | logging (Revit journal and a file log), configuration layers, JSON, DI validation |
-| `source/Davydov.Revit.Hosting` | module: the command pipeline, `IRevitDispatcher`, Revit lifetime, user settings, ribbon wrappers |
+| `source/Davydov.Revit.Hosting` | module: the command pipeline, `IRevitDispatcher`, Revit lifetime, user settings |
 | `source/Davydov.Revit.Hosting.WebView` | module: WebView2 windows and the dock pane, the bridge to React (`revit-bridge`) |
 | `build/` | the build pipeline (ModularPipelines) |
 | `install/` | the `.msi` builder (WixSharp) |

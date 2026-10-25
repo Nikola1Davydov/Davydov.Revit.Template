@@ -12,7 +12,6 @@
 
     <ItemGroup>
         <PackageReference Include="Nice3point.Revit.Toolkit"/>
-        <PackageReference Include="Nice3point.Revit.Extensions"/>
         <PackageReference Include="Nice3point.Revit.Api.RevitAPI"/>
         <PackageReference Include="Nice3point.Revit.Api.RevitAPIUI"/>
         <PackageReference Include="Microsoft.Extensions.Hosting"/>

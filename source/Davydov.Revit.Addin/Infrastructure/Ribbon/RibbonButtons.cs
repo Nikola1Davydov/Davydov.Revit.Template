@@ -1,7 +1,7 @@
 using Autodesk.Revit.UI;
 using Nice3point.Revit.Extensions.UI;
 
-namespace Davydov.Revit.Hosting.Ribbon;
+namespace Davydov.Revit.Addin.Infrastructure.Ribbon;
 
 /// <summary>
 ///     Ribbon helpers that keep buttons inside the Launcher's isolated context (plan, section 8).

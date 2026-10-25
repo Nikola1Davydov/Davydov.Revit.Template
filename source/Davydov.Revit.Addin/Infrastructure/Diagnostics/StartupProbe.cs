@@ -4,7 +4,7 @@ using Davydov.Revit.Hosting.Threading;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Davydov.Revit.Addin.Diagnostics;
+namespace Davydov.Revit.Addin.Infrastructure.Diagnostics;
 
 /// <summary>
 ///     Debug-only check of phase 2 (docs/manual-tests.md): a background service with ordinary <c>await</c>s waits for Revit to

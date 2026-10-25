@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 #if DEBUG
-using Davydov.Revit.Addin.Diagnostics;
+using Davydov.Revit.Addin.Infrastructure.Diagnostics;
 #endif
 using Path = System.IO.Path;
 
@@ -55,7 +55,8 @@ public static partial class Host
 
         //Davydov.Revit.Hosting.WebView: windows and the dock pane with the ClientApp pages (plan, section 9)
         builder.AddWebView(application, webView => webView
-            .DockPane(new Guid("CA1A2580-51FE-4199-A6B5-62760DC2D3CC"), "Davydov.Revit.Addin", "/dock"));
+            .DockPane(new Guid("CA1A2580-51FE-4199-A6B5-62760DC2D3CC"), "Davydov.Revit.Addin", "/dock")
+            .AllowAnyNavigation());
 
 #if DEBUG
         builder.Services.AddHostedService<StartupProbe>();

@@ -1,7 +1,7 @@
 using System.Reflection;
 using System.Runtime.Loader;
 
-namespace Davydov.Revit.Hosting.Ribbon;
+namespace Davydov.Revit.Addin.Infrastructure.Ribbon;
 
 /// <summary>
 ///     Describes the Launcher that loaded the add-in into its isolated <see cref="AssemblyLoadContext" /> (plan, section 8).

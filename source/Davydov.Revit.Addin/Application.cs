@@ -1,4 +1,4 @@
-using Davydov.Revit.Hosting.Ribbon;
+using Davydov.Revit.Addin.Infrastructure.Ribbon;
 using Davydov.Revit.Addin.Commands;
 using Davydov.Revit.Addin.Resources;
 using Nice3point.Revit.Extensions.UI;

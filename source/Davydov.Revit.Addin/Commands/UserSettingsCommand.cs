@@ -1,6 +1,6 @@
 #if DEBUG
 using Autodesk.Revit.Attributes;
-using Davydov.Revit.Addin.Diagnostics;
+using Davydov.Revit.Addin.Infrastructure.Diagnostics;
 using Davydov.Revit.Hosting.Notifications;
 using Davydov.Revit.Hosting.Settings;
 using Microsoft.Extensions.Options;

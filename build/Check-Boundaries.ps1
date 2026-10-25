@@ -30,7 +30,7 @@ $RevitApi = @('Nice3point.Revit.Api.*')
 $Rules = [ordered]@{
     'Davydov.Revit.Hosting' = @{
         Projects = @()
-        Packages = $RevitApi + $Common + @('Nice3point.Revit.Toolkit', 'Nice3point.Revit.Extensions', 'Microsoft.Extensions.*')
+        Packages = $RevitApi + $Common + @('Nice3point.Revit.Toolkit', 'Microsoft.Extensions.*')
         Headless = $true
     }
     'Davydov.Revit.Hosting.WebView' = @{
