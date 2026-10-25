@@ -19,6 +19,7 @@
 | тестовые модули пайплайна | partial-метод `AddRepositoryModules` в `build/Program.cs`, реализация — в исключённом `build/RepositoryModules.cs`; без неё вызов исчезает |
 | `-- test` в `Compile.yml` | символ шаблона `pipelineRun` заменяет строку |
 | README, `AGENTS.md`, `CLAUDE.md`, `ARCHITECTURE.md`, навыки плагина | лежат в `template/content/`, второй источник шаблона копирует их в корень проекта |
+| классический `.sln` для Visual Studio | `template/content/Davydov.Revit.Addin.sln` — **генерируется** из `.slnx` модулем `TemplateSolutionModule` (только репозиторий): локально пайплайн перезаписывает его, CI падает, если он отстал. Руками не править; новый блок «только для репозитория» в `.slnx` — добавить и в этот модуль |
 
 Новый файл только для репозитория — сразу в исключения. Тесты в шаблон не входят.
 
@@ -28,12 +29,22 @@
   Sourcy в `build/`) и `davydov-revit-addin` (символ `kebabName`: `package.json`, virtual host). Других форм он не знает:
   регекс с экранированными точками, `DAVYDOV_REVIT_ADDIN` и т. п. останутся как есть. Имя пишется литералом, а
   производное строится в коде (пример — `$addinName` и `[regex]::Escape` в `build/Check-Boundaries.ps1`).
-* Модули `Davydov.Revit.Hosting*` не переименовываются и имя плагина не используют.
+* Модули — часть плагина (решение 38): `Davydov.Revit.Hosting` → `<имя>.Hosting` (символ `modulesName`, переименовывает
+  и папки), `Davydov_Revit_Hosting` → `<имя>_Hosting` (`modulesIdentifier`). Ключи `AppContext` Launcher → модуль
+  начинаются с `Davydov.Revit.Addin.Launcher`, их заменяет `sourceName`. В созданном проекте с `--vendor` не остаётся ни
+  одного «Davydov» — это проверяет `Template.yml`.
 * Производитель — параметр `--vendor`: заменяет `<VendorId>Davydov</VendorId>` и `"Name": "Davydov"` в `build/appsettings.json`.
 * GUID-ы, которые у каждого плагина свои, — в `guids` файла `template.json`: `AddInId` в `.addin`, GUID док-панели в
   `Host.cs`, UpgradeCode в `build/appsettings.json`. Новый такой GUID — туда же.
 * `#if` в C# шаблонизатор не обрабатывает (`"*.cs": { "operations": [] }`), поэтому `#if DEBUG` безопасен, а условий
   шаблона в `.cs` нет.
+
+## Решение: `.slnx` и `.sln`
+
+Окно «Новый проект» Visual Studio не открывает `.slnx` шаблона, а сохраняет поверх него своё решение — без папок и с
+конфигурациями `Debug`/`Release` (решение 39). Поэтому параметр `--solution-format`: `auto` (по умолчанию) — `.sln` в
+Visual Studio (`HostIdentifier == "vs"`), `.slnx` везде ещё; `slnx` и `sln` — явно. `Template.yml` собирает оба варианта:
+проект по умолчанию (`.slnx`) и проект с `--solution-format sln`.
 
 ## Код и документы
 

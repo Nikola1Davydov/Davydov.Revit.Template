@@ -46,9 +46,14 @@ jobs:
         run: |
           # Placeholder names, and references to this repository's plan or to AnalyseTool that mean nothing in a new project
           $leftovers = Get-ChildItem -Recurse -File | Select-String -Pattern 'Davydov\.Revit\.Addin|Davydov_Revit_Addin|davydov-revit-addin|<VendorId>Davydov<|\(plan, |docs/PLAN|AnalyseTool'
-          $extra = @('tests', 'docs', 'template', 'LICENSE', 'build/RepositoryModules.cs', '.github/workflows/Template.yml', '.github/workflows/PublishTemplate.yml' | Where-Object { Test-Path $_ })
+          # The modules and every other name follow the add-in, and the vendor is Acme: no «Davydov» is left at all
+          # (case-sensitive — the template short name davydov-revit may appear in the README)
+          $leftovers = @(@($leftovers) + @(Get-ChildItem -Recurse -File | Select-String -CaseSensitive -Pattern 'Davydov') | Where-Object { $_ })
+          $extra = @('tests', 'docs', 'template', 'LICENSE', 'build/RepositoryModules.cs', 'build/Modules/TemplateSolutionModule.cs', '.github/workflows/Template.yml', '.github/workflows/PublishTemplate.yml' | Where-Object { Test-Path $_ })
           # The agent files of the add-in, not the ones of this repository (those are in Russian)
           $missing = @('AGENTS.md', 'CLAUDE.md', 'ARCHITECTURE.md', '.agents/skills/add-ribbon-button/SKILL.md', '.agents/skills/add-command/SKILL.md', '.agents/skills/add-page/SKILL.md' | Where-Object { -not (Test-Path $_) })
+          # dotnet new keeps the .slnx; the classic .sln is only for Visual Studio (--solution-format auto)
+          if (Get-ChildItem -File | Where-Object Extension -eq '.sln') { $extra += 'a .sln next to the .slnx' }
           if ((Test-Path AGENTS.md) -and (Get-Content AGENTS.md -Raw) -match '\p{IsCyrillic}') { $extra += 'AGENTS.md of the template repository' }
           $missing | ForEach-Object { "Missing from the project: $_" }
           $leftovers | ForEach-Object { "$($_.Path):$($_.LineNumber): $($_.Line.Trim())" }
@@ -77,3 +82,18 @@ jobs:
           pwsh -NoProfile -File build/Check-Boundaries.ps1
           if ($LASTEXITCODE -ne 1) { Write-Host "The Launcher rule did not catch a type of the add-in"; exit 1 }
           exit 0
+
+      # Visual Studio gets a classic .sln instead of the .slnx; CI cannot be Visual Studio, so it asks for the .sln directly
+      - name: Create and compile a project with the classic solution of Visual Studio
+        shell: pwsh
+        working-directory: ${{ runner.temp }}
+        env:
+          Build__Version: 0.0.1-template.1
+        run: |
+          dotnet new davydov-revit -n Acme.Revit.Classic --vendor Acme --solution-format sln -o Acme.Revit.Classic
+          Set-Location Acme.Revit.Classic
+          if (-not (Test-Path Acme.Revit.Classic.sln) -or (Test-Path Acme.Revit.Classic.slnx)) { Write-Host "Expected Acme.Revit.Classic.sln and no .slnx."; exit 1 }
+          git init -q -b main
+          git add -A
+          git -c user.name=ci -c user.email=ci@example.invalid commit -q -m "Created from the template"
+          dotnet run -c Release --project build

@@ -81,6 +81,11 @@ dotnet new davydov-revit -n Acme.Revit.Tools --vendor Acme
 
 `.github/workflows/Template.yml` creates a project from the template on every pull request, checks it and builds it.
 
+The «New project» dialog of Visual Studio replaces the `.slnx` of a solution template with a solution of its own (no
+folders, only `Debug`/`Release`). So a project created there gets a classic `.sln` instead
+(`template/content/Davydov.Revit.Addin.sln`, generated from the `.slnx` by the pipeline; CI fails if it is out of date),
+while `dotnet new` keeps the `.slnx`. `--solution-format slnx|sln` chooses explicitly.
+
 ### Releasing the template
 
 The package `Davydov.Revit.Templates` goes to [nuget.org](https://www.nuget.org/packages/Davydov.Revit.Templates)

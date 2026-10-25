@@ -19,8 +19,13 @@ dotnet new install Davydov.Revit.Templates
 dotnet new davydov-revit -n Acme.Revit.Tools --vendor Acme
 ```
 
-`-n` is the name of the add-in: projects, namespaces, folders and the installer take it. `--vendor` is the vendor of the
-`.addin`, the installer and the bundle. Every project gets its own add-in id, dock pane id and installer upgrade code.
+`-n` is the name of the add-in: projects, modules, namespaces, folders and the installer take it. `--vendor` is the
+vendor of the `.addin`, the installer and the bundle. Every project gets its own add-in id, dock pane id and installer
+upgrade code.
+
+The template works from the «New project» dialog of Visual Studio too. There the solution is a classic `.sln` — Visual
+Studio would replace a `.slnx` with a solution of its own; File → Save As converts it to `.slnx`. `dotnet new` creates a
+`.slnx`; `--solution-format sln` asks for the `.sln` instead.
 
 The created project explains itself in its `README.md` and `ARCHITECTURE.md`. Source, issues and changes:
 [github.com/Nikola1Davydov/Davydov.Revit.Template](https://github.com/Nikola1Davydov/Davydov.Revit.Template).

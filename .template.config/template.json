@@ -26,6 +26,35 @@
     "BADACEF9-1500-4A6F-9559-F921B1DEBEB5"
   ],
   "symbols": {
+    "HostIdentifier": {
+      "type": "bind",
+      "binding": "HostIdentifier"
+    },
+    "SolutionFormat": {
+      "type": "parameter",
+      "datatype": "choice",
+      "displayName": "Solution format",
+      "description": "auto: a classic .sln in Visual Studio, whose «New project» dialog replaces a .slnx; a .slnx everywhere else",
+      "choices": [
+        {
+          "choice": "auto",
+          "description": ".sln in Visual Studio, .slnx everywhere else"
+        },
+        {
+          "choice": "slnx",
+          "description": "The XML solution format"
+        },
+        {
+          "choice": "sln",
+          "description": "The classic solution format"
+        }
+      ],
+      "defaultValue": "auto"
+    },
+    "useSln": {
+      "type": "computed",
+      "value": "(SolutionFormat == \"sln\" || (SolutionFormat == \"auto\" && HostIdentifier == \"vs\"))"
+    },
     "vendor": {
       "type": "parameter",
       "datatype": "text",
@@ -50,6 +79,19 @@
       "valueSource": "name",
       "valueTransform": "kebabCase",
       "replaces": "davydov-revit-addin"
+    },
+    "modulesName": {
+      "type": "derived",
+      "valueSource": "name",
+      "valueTransform": "modulesName",
+      "replaces": "Davydov.Revit.Hosting",
+      "fileRename": "Davydov.Revit.Hosting"
+    },
+    "modulesIdentifier": {
+      "type": "derived",
+      "valueSource": "name",
+      "valueTransform": "modulesIdentifier",
+      "replaces": "Davydov_Revit_Hosting"
     },
     "pipelineRun": {
       "type": "generated",
@@ -93,6 +135,28 @@
       "identifier": "replace",
       "pattern": "^(.*)$",
       "replacement": "\"Name\": \"$1\""
+    },
+    "modulesName": {
+      "identifier": "replace",
+      "pattern": "^(.*)$",
+      "replacement": "$1.Hosting"
+    },
+    "dotsToUnderscores": {
+      "identifier": "replace",
+      "pattern": "\\.",
+      "replacement": "_"
+    },
+    "appendHostingIdentifier": {
+      "identifier": "replace",
+      "pattern": "^(.*)$",
+      "replacement": "$1_Hosting"
+    },
+    "modulesIdentifier": {
+      "identifier": "chain",
+      "steps": [
+        "dotsToUnderscores",
+        "appendHostingIdentifier"
+      ]
     }
   },
   "SpecialCustomOperations": {
@@ -128,9 +192,11 @@
             "docs/**",
             "build/Modules/Test*.cs",
             "build/RepositoryModules.cs",
+            "build/Modules/TemplateSolutionModule.cs",
             "LICENSE",
             "package-lock.json",
             "output/**",
+            "artifacts/**",
             "**/TestResults/**",
             "**/bin/**",
             "**/obj/**",
@@ -143,17 +209,35 @@
             "AGENTS.md",
             "CLAUDE.md"
           ]
+        },
+        {
+          "condition": "(useSln)",
+          "exclude": [
+            "Davydov.Revit.Addin.slnx"
+          ]
         }
       ]
     },
     {
       "source": "./template/content/",
-      "target": "./"
+      "target": "./",
+      "modifiers": [
+        {
+          "condition": "(!useSln)",
+          "exclude": [
+            "Davydov.Revit.Addin.sln"
+          ]
+        }
+      ]
     }
   ],
   "primaryOutputs": [
     {
       "path": "README.md"
+    },
+    {
+      "condition": "(useSln)",
+      "path": "Davydov.Revit.Addin.sln"
     }
   ]
 }
