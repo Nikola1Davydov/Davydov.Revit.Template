@@ -52,10 +52,12 @@ public static class LoggingRegistration
                 ["Logging:Serilog:LogLevel:Default"] = nameof(LogLevel.Information)
             });
 
-            builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
             builder.Logging.AddDebug();
             builder.Logging.AddRevitJournal(RevitApiContext.Application, options => options.ApplicationName = builder.Environment.ApplicationName);
             builder.AddFileLog();
+
+            // After the providers: AddSerilog adds its own Trace filter, and a later filter rule wins over an earlier one
+            builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
 
             builder.Services.AddHostedService<AppDomainExceptionsHandler>();
             builder.Services.Configure<ConsoleLifetimeOptions>(options => options.SuppressStatusMessages = true);
