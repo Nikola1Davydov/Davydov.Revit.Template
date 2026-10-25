@@ -813,6 +813,13 @@ Nice3point (`global.json` → Microsoft.Testing.Platform).
    (`installer/`) + bundle для Autodesk Store, GitHub workflows `Compile.yml` / `PublishRelease.yml`, версия из
    git-тегов, CHANGELOG. Плюс наше: проверка границ по таблице 3.1 и запрета `ActiveUIDocument` (раздел 7), сборка
    фронтенда в `pack`. Тесты внутри Revit — не в облачном CI: локально или на своём раннере.
+   **Сделано — compile и test (2026-10-25):** `build/` по образцу шаблона Nice3point 6.2.3 — `ResolveConfigurations`,
+   `ResolveVersioning` (GitVersion), `CompileClientApp` (`npm ci` / локально `npm install`, затем `npm run build`) и
+   `CompileProject` для `Release.R25…R27`; версии пакетов — в общем `Directory.Packages.props` (Revit-пакеты — под
+   условием `RevitVersion`, у `build/` его нет). С аргументом `test` — наши тесты: `Davydov.Revit.Hosting.Tests` на всех
+   конфигурациях, Vitest в `revit-bridge`, `Davydov.Revit.Addin.Tests` — только не в CI (`SkipIf<IsCI>`).
+   `.github/workflows/Compile.yml`: `push` в `main` и `pull_request`, `dotnet run -c Release -- test`.
+   **Дальше:** `pack` (очистка, `output/`), WixSharp, bundle, `PublishRelease.yml`, CHANGELOG, `Check-Boundaries.ps1`.
 6. **Шаблон** — свой `dotnet new davydov-revit -n Davydov.Revit.Addin` (решение 24): копия структуры Nice3point + наши модули в
    исходниках, параметры; в README шаблона — с какой версией примера Nice3point он сверен и как переносить их обновления.
    **Каждый новый проект получает свои идентификаторы** (`guids` и `sourceName` в `template.json`): `AddInId` в `.addin`,
@@ -820,6 +827,8 @@ Nice3point (`global.json` → Microsoft.Testing.Platform).
    логов и `usersettings`, имя virtual host. Проверка: два плагина из шаблона одновременно в одном Revit. CLAUDE.md и навыки для ИИ-агентов
    (как `.agents/skills` у Nice3point: правила документов, команд, потоков, ленты); генерация TS-типов
    (утилита после сборки читает команды из DLL через `MetadataLoadContext` и пишет `ClientApp/src/generated/commands.ts`).
+   **Тесты в шаблон не входят — они только для этого репозитория:** папка `tests/`, тесты `revit-bridge`, модули
+   `build/Modules/Test*` и блок `test` в `build/Program.cs`; в `Compile.yml` шаблона — `dotnet run -c Release` без `test`.
 7. **Опционально** — MCP, Roslyn-скрипты (переносятся из AnalyseTool как модули `AddMcp()` и т.п.).
    Системы сторонних расширений нет (решение 12).
 

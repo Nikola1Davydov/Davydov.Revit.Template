@@ -29,4 +29,19 @@ Debug-сборка сама раскладывает плагин в `%AppData%\
 Если сборка падает с «workload set … has missing manifests», это поломка установки .NET SDK, а не проекта: либо
 `dotnet workload repair`, либо собирать с переменной окружения `MSBuildEnableWorkloadResolver=false`.
 
+Вся сборка — пайплайн ModularPipelines в `build/` (как у Nice3point): `ClientApp` и все `Release.R2x`:
+
+```
+dotnet run -c Release --project build
+```
+
+С тестами (`Davydov.Revit.Hosting.Tests`, Vitest в `revit-bridge` и тесты внутри Revit — для них Revit должен быть
+закрыт, он запускается сам):
+
+```
+dotnet run -c Release --project build -- test
+```
+
+В CI (`.github/workflows/Compile.yml`, на `push` в `main` и на PR) — то же с `test`, но без тестов внутри Revit.
+
 Проверки в живом Revit — [docs/manual-tests.md](docs/manual-tests.md).

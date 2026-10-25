@@ -1,0 +1,46 @@
+name: Compile solution
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  windows:
+    name: windows-2025
+    runs-on: windows-2025
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            source/Davydov.Revit.Addin/ClientApp/package-lock.json
+            source/Davydov.Revit.Hosting.WebView/revit-bridge/package-lock.json
+
+      - name: Cache packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'Directory.Packages.props') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
+      # The template of phase 6 runs the pipeline without arguments; "test" adds our tests (plan, phase 6)
+      - name: Compile and test
+        run: dotnet run -c Release -- test
+        working-directory: "build"
+        env:
+          DOTNET_ENVIRONMENT: ${{ github.ref_name == 'main' && 'Production' || 'Development' }}
