@@ -15,6 +15,7 @@ builder.Services.AddOptions<BuildOptions>().Bind(builder.Configuration.GetSectio
 builder.Services.AddOptions<ProductOptions>().Bind(builder.Configuration.GetSection("Product")).ValidateDataAnnotations();
 builder.Services.AddOptions<VendorOptions>().Bind(builder.Configuration.GetSection("Vendor")).ValidateDataAnnotations();
 
+builder.Services.AddModule<CheckBoundariesModule>();
 builder.Services.AddModule<CompileClientAppModule>();
 builder.Services.AddModule<CompileProjectModule>();
 

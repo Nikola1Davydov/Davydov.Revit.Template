@@ -174,7 +174,7 @@ Davydov.Revit.Addin/
 
 | Проект | Ссылается на | Правила |
 | --- | --- | --- |
-| `Davydov.Revit.Hosting` | Revit API (только компиляция), Nice3point.Revit.Toolkit, Microsoft.Extensions.* | **headless**: без `UseWPF`, `System.Windows`, `MessageBox` |
+| `Davydov.Revit.Hosting` | Revit API (только компиляция), Nice3point.Revit.Toolkit, Nice3point.Revit.Extensions (обёртки ленты `AddButton<T>`), Microsoft.Extensions.* | **headless**: без `UseWPF`, `System.Windows`, `MessageBox` |
 | `Davydov.Revit.Hosting.WebView` | Hosting, WebView2, Toolkit | единственное место WPF и диалогов наших модулей |
 | `Davydov.Revit.Addin.ServiceDefaults` | Toolkit, Nice3point.Revit.Logging, Microsoft.Extensions.Hosting, Serilog (файловый лог, решение 23), Davydov.Revit.Hosting (`AddUserSettings`) | как в Nice3point |
 | `Davydov.Revit.Addin.Launcher` | только Revit API; на приложение — **только** ради порядка сборки и `deps.json` | в коде Launcher нельзя использовать типы приложения и модулей: они загрузились бы в default ALC в обход изоляции |
@@ -474,7 +474,7 @@ scoped-сервис приложения `ActiveDocument` и `DocumentCheckMiddl
    Атрибутов для этого нет.
 6. **Документ закрыли во время команды** — следующий доступ даст `no_document` или `document_changed`; токена
    закрытия нет.
-7. **Защита в CI:** скрипт (рядом с `Check-Boundaries.ps1`) запрещает `ActiveUIDocument` в `Features/` и `Services/`,
+7. **Защита в CI:** `build/Check-Boundaries.ps1` запрещает `ActiveUIDocument` в `Features/` и `Services/`,
    в том числе внутри `IRevitDispatcher.InvokeAsync(Func<UIApplication, T>)`. Исключения — сам
    `Services/Documents/ActiveDocument.cs` и строка с комментарием `// AllowActiveDocument: причина`.
    В кнопках (`Commands/`, раздел 8) активный документ использовать можно: клик и относится к нему.
@@ -809,9 +809,9 @@ Nice3point (`global.json` → Microsoft.Testing.Platform).
    пишется одной строкой `CommandLogging` (`canceled by the caller`), исполнитель — только `Debug`, не `Warning`
    (в Debug `StrictMode` React отменяет первый запрос при каждом открытии страницы). Тесты — 39.
 
-5. **Сборка и выпуск — как у Nice3point** — ModularPipelines (`build/`: compile, test, pack, publish), WixSharp
-   (`installer/`) + bundle для Autodesk Store, GitHub workflows `Compile.yml` / `PublishRelease.yml`, версия из
-   git-тегов, CHANGELOG. Плюс наше: проверка границ по таблице 3.1 и запрета `ActiveUIDocument` (раздел 7), сборка
+5. **Сборка — как у Nice3point** — ModularPipelines (`build/`: compile, test, pack), WixSharp
+   (`install/`) + bundle для Autodesk Store, GitHub workflow `Compile.yml`, версия из git-тегов (GitVersion).
+   Выпуск (`publish`, `PublishRelease.yml`, CHANGELOG) перенесён в фазу 6 (решение 33). Плюс наше: проверка границ по таблице 3.1 и запрета `ActiveUIDocument` (раздел 7), сборка
    фронтенда в `pack`. Тесты внутри Revit — не в облачном CI: локально или на своём раннере.
    **Сделано — compile и test (2026-10-25):** `build/` по образцу шаблона Nice3point 6.2.3 — `ResolveConfigurations`,
    `ResolveVersioning` (GitVersion), `CompileClientApp` (`npm ci` / локально `npm install`, затем `npm run build`) и
@@ -827,7 +827,12 @@ Nice3point (`global.json` → Microsoft.Testing.Platform).
    (`Product`, `Vendor`). Оба берут только `Release.R2x/publish` и падают без `ClientApp/dist/index.html`. Launcher
    убирает из сборки ассеты не-x64 платформ и XML-документацию WebView2 (`RemoveForeignPlatformAssets`). В CI `pack`
    не идёт — только в `PublishRelease.yml`.
-   **Дальше:** `PublishRelease.yml`, CHANGELOG, `Check-Boundaries.ps1`.
+   **Сделано — проверка границ (2026-10-25):** `build/Check-Boundaries.ps1` (PowerShell 7) — ссылки проектов `source/`
+   по таблице 3.1 (новый проект без строки в скрипте — ошибка), headless `Davydov.Revit.Hosting` (`UseWPF`,
+   `System.Windows`, `MessageBox`), без `System.Windows` и `ActiveUIDocument` в `Features/` и `Services/` приложения
+   (кроме `ActiveDocument.cs` и строки с `// AllowActiveDocument: причина`), без типов приложения и модулей в коде
+   Launcher; комментарии и строки не считаются. В пайплайне — `CheckBoundariesModule` при каждом запуске, в CI тоже.
+   **Фаза 5 закрыта.**
 6. **Шаблон** — свой `dotnet new davydov-revit -n Davydov.Revit.Addin` (решение 24): копия структуры Nice3point + наши модули в
    исходниках, параметры; в README шаблона — с какой версией примера Nice3point он сверен и как переносить их обновления.
    **Каждый новый проект получает свои идентификаторы** (`guids` и `sourceName` в `template.json`): `AddInId` в `.addin`,
@@ -835,6 +840,12 @@ Nice3point (`global.json` → Microsoft.Testing.Platform).
    логов и `usersettings`, имя virtual host. Проверка: два плагина из шаблона одновременно в одном Revit. CLAUDE.md и навыки для ИИ-агентов
    (как `.agents/skills` у Nice3point: правила документов, команд, потоков, ленты); генерация TS-типов
    (утилита после сборки читает команды из DLL через `MetadataLoadContext` и пишет `ClientApp/src/generated/commands.ts`).
+   **Выпуск (решение 33):** релиз этого репозитория — NuGet-пакет шаблона (`PackageType` `Template`, `dotnet pack`,
+   публикация в nuget.org или GitHub Packages) своим workflow. Внутри шаблона, для плагинов из него, — как у
+   Nice3point: `PublishRelease.yml` (тег или `workflow_dispatch` → `pack publish`), модули `GenerateChangelog`,
+   `GenerateGitHubChangelog`, `PublishGithub` (GitHub Release с MSI и bundle, при ошибке тег удаляется), `CHANGELOG.md`,
+   `permissions: contents: write`, `setup-dotnet` и `setup-node`. Проверяется в проекте, созданном из шаблона, в тестовом
+   репозитории — не здесь: релиз плагина-заглушки смысла не имеет.
    **Тесты в шаблон не входят — они только для этого репозитория:** папка `tests/`, тесты `revit-bridge`, модули
    `build/Modules/Test*` и блок `test` в `build/Program.cs`; в `Compile.yml` шаблона — `dotnet run -c Release` без `test`.
 7. **Опционально** — MCP, Roslyn-скрипты (переносятся из AnalyseTool как модули `AddMcp()` и т.п.).
@@ -880,3 +891,4 @@ _(открытых вопросов нет)_
 | 30 | ~~**События Revit — дело приложения, не модуля.** Механизма событий в `Davydov.Revit.Hosting` нет: ни `AddRevitEvents`, ни `IAppEventHandler<T>` / `IRevitEventHandler<TArgs>`, ни `RevitUpdater`, ни debounce и `ForwardToClient`. Плагин подписывается сам (`+=`) по правилам раздела 6; во фронтенд публикует через `IClientEvents` модуля WebView. От модуля — только `IRevitLifetime`. Пример `ActiveDocumentEvents` — в фазе WebView. Фаза «События» убрана, фазы 5–8 стали 4–7.~~ — заменено решением 31. | 2026-10-25 |
 | 31 | **Событий в шаблоне пока нет вовсе:** ни механизма в модулях, ни примера подписки в приложении (`ActiveDocumentEvents`), ни push во фронтенд (`IClientEvents`, сообщение Event протокола, `useRevitEvent`, `refetchOn`). Смену документа фронтенд узнаёт по ошибке `document_changed` и команде приложения `GetActiveDocument`. `IRevitLifetime` остаётся — это жизненный цикл, а не события. Правила подписки из опыта AnalyseTool — в истории плана (коммит cf395b0, раздел 6); вернёмся к событиям, когда понадобятся. | 2026-10-25 |
 | 32 | **Защита навигации WebView — по желанию, выключена по умолчанию.** `AddWebView(application, w => w.RestrictNavigation())` включает: переходы только на свой адрес (чужие `http(s)` — в системный браузер), новые окна — в системный браузер, сообщения в конвейер — только со своего origin. Без неё WebView ведёт себя как обычно. Настройки WebView (DevTools и контекстное меню только в Debug, без host objects) — всегда. | 2026-10-25 |
+| 33 | **Этот репозиторий — шаблон, его релиз — NuGet-пакет шаблона**, а не MSI плагина-заглушки `Davydov.Revit.Addin`. `build/`, `install/`, `Compile.yml` здесь — содержимое шаблона, собранное и проверенное на заглушке. Выпуск (`publish`, `PublishRelease.yml`, CHANGELOG, GitHub Release с MSI) — содержимое шаблона для плагинов из него; делается и проверяется в фазе 6 вместе с релизом самого шаблона. | 2026-10-25 |

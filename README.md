@@ -44,6 +44,10 @@ dotnet run -c Release --project build -- test
 
 В CI (`.github/workflows/Compile.yml`, на `push` в `main` и на PR) — то же с `test`, но без тестов внутри Revit.
 
+Каждый запуск пайплайна проверяет границы проектов (`build/Check-Boundaries.ps1`, раздел 3.1 плана): кто на что
+ссылается, без WPF в `Davydov.Revit.Hosting`, без `ActiveUIDocument` в `Features/` и `Services/` приложения, без типов
+приложения в Launcher. Отдельно: `pwsh build/Check-Boundaries.ps1`.
+
 Установщики и пакет для Autodesk App Store — в `output/`:
 
 ```
