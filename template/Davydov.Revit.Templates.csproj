@@ -17,6 +17,8 @@
         <PackageTags>autodesk;revit;addin;template;webview2</PackageTags>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <RepositoryUrl>https://github.com/Nikola1Davydov/Davydov.Revit.Template</RepositoryUrl>
+        <!-- The page of the package on nuget.org; the README of a created project is template/content/README.md -->
+        <PackageReadmeFile>README.md</PackageReadmeFile>
 
         <TargetFramework>netstandard2.0</TargetFramework>
         <IncludeContentInPack>true</IncludeContentInPack>
@@ -31,8 +33,9 @@
 
     <ItemGroup>
         <Content Include="..\**\*"
-                 Exclude="..\.git\**;..\.vs\**;..\.idea\**;..\.claude\**;..\**\bin\**;..\**\obj\**;..\**\node_modules\**;..\**\ClientApp\dist\**;..\output\**;..\**\TestResults\**;..\**\*.user;..\template\*.csproj"
+                 Exclude="..\.git\**;..\.vs\**;..\.idea\**;..\.claude\**;..\**\bin\**;..\**\obj\**;..\**\node_modules\**;..\**\ClientApp\dist\**;..\output\**;..\**\TestResults\**;..\**\*.user;..\template\*.csproj;..\template\README.md"
                  PackagePath="content\Davydov.Revit.AddIn\"/>
+        <None Include="README.md" Pack="true" PackagePath="\"/>
         <Compile Remove="**\*"/>
     </ItemGroup>
 

@@ -863,7 +863,14 @@ Nice3point (`global.json` → Microsoft.Testing.Platform).
    pack`). Ключи `AppContext` Launcher → модуль теперь с именем плагина: два плагина в одном Revit не читают чужой
    Launcher. `.github/workflows/Template.yml` (только здесь): пакет → `dotnet new` → нет заглушек и лишних файлов →
    `dotnet run -c Release --project build` в созданном проекте.
-   **Дальше:** 6.2 `PublishRelease.yml` для плагинов, 6.3 релиз пакета шаблона, 6.4 CLAUDE.md и навыки, 6.5 TS-типы.
+   **Сделано — 6.4, документы для агентов (2026-10-25):** в шаблоне — `AGENTS.md` (правила и указатель навыков),
+   `CLAUDE.md` (`@AGENTS.md`), `ARCHITECTURE.md`, навыки `.agents/skills/` (`add-ribbon-button`, `add-command`,
+   `add-page`), на английском; у репозитория — свои `AGENTS.md` и `CLAUDE.md` на русском, в шаблон не входят.
+   **Сделано — 6.3, выпуск пакета шаблона (2026-10-25, решение 37):** `.github/workflows/PublishTemplate.yml` — по тегу
+   `v<версия>` или вручную (dry run по умолчанию): проверки `Template.yml` (`workflow_call`), `dotnet pack` с версией из
+   тега, `NuGet/login` (Trusted Publishing, пользователь `NikolaiDavydov`, окружение `nuget`), `dotnet nuget push`,
+   GitHub Release с `.nupkg`. README страницы пакета — `template/README.md`.
+   **Дальше:** первая публикация (`v0.1.0-preview.1`), 6.2 `PublishRelease.yml` для плагинов, 6.5 TS-типы.
 7. **Опционально** — MCP, Roslyn-скрипты (переносятся из AnalyseTool как модули `AddMcp()` и т.п.).
    Системы сторонних расширений нет (решение 12).
 
@@ -911,3 +918,4 @@ _(открытых вопросов нет)_
 | 34 | **Защита навигации WebView — включена по умолчанию** (вместо решения 32): стартовый шаблон безопасен сразу — переходы только на свой адрес (virtual host в Release, dev-сервер в Debug), чужие `http(s)` и новые окна — в системный браузер, сообщения в конвейер — только со своего origin. Выключает `AddWebView(application, w => w.AllowAnyNavigation())`; `RestrictNavigation()` убран. | 2026-10-25 |
 | 35 | **Лента и связь с Launcher — в приложении, не в модуле.** `RibbonButtons` (`AddButton<T>`, `SetAvailability<T>`), `LauncherInfo` и `DocumentAvailability` / `ProjectAvailability` — в `Davydov.Revit.Addin/Infrastructure/Ribbon/` (обвязка приложения; там же `Diagnostics/`). Это не конвейер, а связка плагина со своим Launcher: договор о ключах `AppContext` (`PluginInfo` ↔ `LauncherInfo`) лежит целиком в исходниках плагина и не разойдётся по версиям, когда модули уйдут в NuGet (решение 24). `Davydov.Revit.Hosting` — без `Nice3point.Revit.Extensions`. | 2026-10-25 |
 | 36 | **Без запасной панели.** `FallbackRibbon` (кнопка «Startup error» на вкладке Add-Ins, открывавшая лог) убран. При сбое старта Launcher пишет `startup-error.txt` и пробрасывает исключение плагина; Revit сам сообщает об отказе внешнего приложения и пишет его в журнал. | 2026-10-25 |
+| 37 | **Пакет шаблона — на nuget.org, через Trusted Publishing.** `dotnet new install Davydov.Revit.Templates` без настройки источников. Ключа в секретах нет: политика на nuget.org доверяет `PublishTemplate.yml` в окружении `nuget` репозитория `Nikola1Davydov/Davydov.Revit.Template`, `NuGet/login` меняет OIDC-токен GitHub на временный ключ. GitHub Packages не используем (установка оттуда требует токена). Каждая публикация — ещё и GitHub Release. | 2026-10-25 |

@@ -81,6 +81,20 @@ dotnet new davydov-revit -n Acme.Revit.Tools --vendor Acme
 
 `.github/workflows/Template.yml` creates a project from the template on every pull request, checks it and builds it.
 
+### Releasing the template
+
+The package `Davydov.Revit.Templates` goes to [nuget.org](https://www.nuget.org/packages/Davydov.Revit.Templates)
+through `.github/workflows/PublishTemplate.yml`, with nuget.org Trusted Publishing: no API key is stored, nuget.org
+trusts that workflow file in the GitHub environment `nuget`.
+
+* A tag `v<version>` on `main` (`git tag v0.1.0-preview.1`, `git push origin v0.1.0-preview.1`) runs the checks of
+  `Template.yml`, packs the template with that version, pushes it to nuget.org and creates a GitHub release with the
+  `.nupkg`; a version with `-` is a prerelease.
+* A manual run (Actions → Publish template → Run workflow) takes the version and a **dry run** switch, on by default: it
+  checks, packs and logs in to nuget.org, but publishes nothing.
+
+A version on nuget.org cannot be deleted, only unlisted: try a new setup with a dry run or a prerelease first.
+
 The template is aligned with **Nice3point.Revit.Templates 6.2.3** (the `revit-addin-sln` template with every option:
 installer, bundle, GitHub Actions): `build/`, `install/`, `.github/workflows/Compile.yml`, `global.json`. To carry over
 their updates: `dotnet new install Nice3point.Revit.Templates::<version>`, unpack the package from
