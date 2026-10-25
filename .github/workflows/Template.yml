@@ -6,6 +6,8 @@ on:
     branches:
       - main
   pull_request:
+  # PublishTemplate.yml runs the same checks before it publishes the package
+  workflow_call:
 
 jobs:
   windows:
@@ -44,7 +46,7 @@ jobs:
         run: |
           # Placeholder names, and references to this repository's plan or to AnalyseTool that mean nothing in a new project
           $leftovers = Get-ChildItem -Recurse -File | Select-String -Pattern 'Davydov\.Revit\.Addin|Davydov_Revit_Addin|davydov-revit-addin|<VendorId>Davydov<|\(plan, |docs/PLAN|AnalyseTool'
-          $extra = @('tests', 'docs', 'template', 'LICENSE', 'build/RepositoryModules.cs', '.github/workflows/Template.yml' | Where-Object { Test-Path $_ })
+          $extra = @('tests', 'docs', 'template', 'LICENSE', 'build/RepositoryModules.cs', '.github/workflows/Template.yml', '.github/workflows/PublishTemplate.yml' | Where-Object { Test-Path $_ })
           # The agent files of the add-in, not the ones of this repository (those are in Russian)
           $missing = @('AGENTS.md', 'CLAUDE.md', 'ARCHITECTURE.md', '.agents/skills/add-ribbon-button/SKILL.md', '.agents/skills/add-command/SKILL.md', '.agents/skills/add-page/SKILL.md' | Where-Object { -not (Test-Path $_) })
           if ((Test-Path AGENTS.md) -and (Get-Content AGENTS.md -Raw) -match '\p{IsCyrillic}') { $extra += 'AGENTS.md of the template repository' }

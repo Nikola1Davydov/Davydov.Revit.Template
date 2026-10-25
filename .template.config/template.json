@@ -139,6 +139,7 @@
             "**/*.user",
             "README.md",
             ".github/workflows/Template.yml",
+            ".github/workflows/PublishTemplate.yml",
             "AGENTS.md",
             "CLAUDE.md"
           ]

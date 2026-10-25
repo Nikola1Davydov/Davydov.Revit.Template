@@ -1,0 +1,70 @@
+# This repository only (the template leaves it out): publishes the template package to nuget.org.
+# Trusted Publishing: nuget.org trusts this workflow file in the nuget environment, so no API key is stored;
+# NuGet/login exchanges the GitHub OIDC token for a short-lived one.
+name: Publish template
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Package version, for example 0.1.0-preview.1"
+        required: true
+        type: string
+      dry-run:
+        description: "Build, check and log in to nuget.org, but publish nothing"
+        type: boolean
+        default: true
+
+jobs:
+  check:
+    uses: ./.github/workflows/Template.yml
+
+  publish:
+    name: nuget.org
+    needs: check
+    runs-on: windows-2025
+    environment: nuget
+    permissions:
+      id-token: write
+      contents: write
+    env:
+      # v1.2.3 from the tag, or the version typed in for a manual run
+      VERSION: ${{ github.event_name == 'push' && github.ref_name || inputs.version }}
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Pack the template
+        shell: pwsh
+        run: |
+          $version = $env:VERSION -replace '^v', ''
+          if ($version -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') { Write-Host "The version '$version' is not a semantic version."; exit 1 }
+          "PACKAGE_VERSION=$version" | Out-File $env:GITHUB_ENV -Append
+          dotnet pack template/Davydov.Revit.Templates.csproj -c Release -o artifacts -p:Version=$version
+
+      - name: Log in to nuget.org
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: NikolaiDavydov
+
+      - name: Push to nuget.org
+        if: env.DRY_RUN != 'true'
+        shell: pwsh
+        run: dotnet nuget push "artifacts/Davydov.Revit.Templates.$env:PACKAGE_VERSION.nupkg" --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json
+
+      - name: Create the GitHub release
+        if: env.DRY_RUN != 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "v$env:PACKAGE_VERSION"
+          $options = @('--target', $env:GITHUB_SHA, '--title', $tag, '--generate-notes')
+          if ($env:PACKAGE_VERSION.Contains('-')) { $options += '--prerelease' }
+          gh release create $tag "artifacts/Davydov.Revit.Templates.$env:PACKAGE_VERSION.nupkg" @options
