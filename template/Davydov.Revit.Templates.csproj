@@ -33,7 +33,7 @@
 
     <ItemGroup>
         <Content Include="..\**\*"
-                 Exclude="..\.git\**;..\.vs\**;..\.idea\**;..\.claude\**;..\**\bin\**;..\**\obj\**;..\**\node_modules\**;..\**\ClientApp\dist\**;..\output\**;..\**\TestResults\**;..\**\*.user;..\template\*.csproj;..\template\README.md"
+                 Exclude="..\.git\**;..\.vs\**;..\.idea\**;..\.claude\**;..\**\bin\**;..\**\obj\**;..\**\node_modules\**;..\**\ClientApp\dist\**;..\output\**;..\artifacts\**;..\**\TestResults\**;..\**\*.user;..\template\*.csproj;..\template\README.md"
                  PackagePath="content\Davydov.Revit.AddIn\"/>
         <None Include="README.md" Pack="true" PackagePath="\"/>
         <Compile Remove="**\*"/>

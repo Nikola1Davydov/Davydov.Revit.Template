@@ -15,10 +15,10 @@ namespace Davydov.Revit.Addin.Infrastructure.Ribbon;
 public sealed class LauncherInfo
 {
     /// <summary>The <see cref="AppContext" /> key of the Launcher assembly path, followed by <c>:</c> and the add-in name.</summary>
-    public const string PathKey = "Davydov.Revit.Launcher.Path";
+    public const string PathKey = "Davydov.Revit.Addin.Launcher.Path";
 
     /// <summary>The <see cref="AppContext" /> key of the namespace that holds the proxy classes, followed by <c>:</c> and the add-in name.</summary>
-    public const string ProxyNamespaceKey = "Davydov.Revit.Launcher.ProxyNamespace";
+    public const string ProxyNamespaceKey = "Davydov.Revit.Addin.Launcher.ProxyNamespace";
 
     private Assembly? _assembly;
 

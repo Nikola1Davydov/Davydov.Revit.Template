@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/dotnetcli.host",
+  "symbolInfo": {
+    "vendor": {
+      "longName": "vendor",
+      "shortName": ""
+    },
+    "SolutionFormat": {
+      "longName": "solution-format",
+      "shortName": ""
+    }
+  },
+  "usageExamples": [
+    "dotnet new davydov-revit -n Acme.Revit.Tools --vendor Acme",
+    "dotnet new davydov-revit -n Acme.Revit.Tools --vendor Acme --solution-format sln"
+  ]
+}

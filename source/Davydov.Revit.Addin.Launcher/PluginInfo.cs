@@ -20,8 +20,8 @@ internal static class PluginInfo
     ///     <see cref="AppContext" /> is process-wide, so the keys end with the add-in name: two add-ins made from the
     ///     template must not read each other's Launcher.
     /// </summary>
-    public const string LauncherPathKey = $"Davydov.Revit.Launcher.Path:{Name}";
+    public const string LauncherPathKey = $"Davydov.Revit.Addin.Launcher.Path:{Name}";
 
     /// <inheritdoc cref="LauncherPathKey" />
-    public const string ProxyNamespaceKey = $"Davydov.Revit.Launcher.ProxyNamespace:{Name}";
+    public const string ProxyNamespaceKey = $"Davydov.Revit.Addin.Launcher.ProxyNamespace:{Name}";
 }

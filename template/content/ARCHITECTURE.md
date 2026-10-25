@@ -14,6 +14,9 @@ How the add-in starts, where the code goes and why. The rules an agent must not 
 | `build/` | The build pipeline (ModularPipelines): boundary check, `ClientApp`, compile, `pack`. |
 | `install/` | The `.msi` builder (WixSharp). |
 
+The modules are the add-in's own code, not a dependency: change them as the add-in needs. Only `Davydov.Revit.Hosting`
+stays headless, so the pipeline can run without the UI.
+
 ## Startup and isolation
 
 1. Revit loads `Davydov.Revit.Addin.Launcher.addin` and calls `App.OnStartup` of the Launcher.
