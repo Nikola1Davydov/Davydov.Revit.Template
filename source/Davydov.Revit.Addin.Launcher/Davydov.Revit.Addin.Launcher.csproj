@@ -28,6 +28,19 @@
         <PackageReference Include="Nice3point.Revit.Api.RevitAPIUI"/>
     </ItemGroup>
 
+    <!--
+        Revit is x64 only: drop the assets of other platforms and the WebView2 API docs before PublishAddin (Nice3point.Revit.Sdk)
+        copies the output to publish and to the Revit add-ins folder. A RuntimeIdentifier would not do: WebView2 copies the
+        loaders of every platform itself, and the publish folder would move to bin\<configuration>\win-x64.
+    -->
+    <Target Name="RemoveForeignPlatformAssets" AfterTargets="CopyFilesToOutputDirectory" BeforeTargets="PublishAddin">
+        <RemoveDir Directories="$(TargetDir)runtimes\win-x86;$(TargetDir)runtimes\win-arm64;$(TargetDir)runtimes\browser"/>
+        <ItemGroup>
+            <_WebView2Docs Include="$(TargetDir)Microsoft.Web.WebView2.*.xml"/>
+        </ItemGroup>
+        <Delete Files="@(_WebView2Docs)"/>
+    </Target>
+
     <ItemGroup>
         <ProjectReference Include="..\Davydov.Revit.Addin\Davydov.Revit.Addin.csproj"/>
     </ItemGroup>

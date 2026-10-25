@@ -819,7 +819,15 @@ Nice3point (`global.json` → Microsoft.Testing.Platform).
    условием `RevitVersion`, у `build/` его нет). С аргументом `test` — наши тесты: `Davydov.Revit.Hosting.Tests` на всех
    конфигурациях, Vitest в `revit-bridge`, `Davydov.Revit.Addin.Tests` — только не в CI (`SkipIf<IsCI>`).
    `.github/workflows/Compile.yml`: `push` в `main` и `pull_request`, `dotnet run -c Release -- test`.
-   **Дальше:** `pack` (очистка, `output/`), WixSharp, bundle, `PublishRelease.yml`, CHANGELOG, `Check-Boundaries.ps1`.
+   **Сделано — pack (2026-10-25):** `dotnet run -c Release -- pack` — `CleanProject` (локально; `node_modules` не трогает:
+   у npm-пакетов свои `bin`), `CreateInstaller` (WiX 7 через `dotnet tool` с `wix eula accept wix7` — EULA OSMF принята,
+   `install/` на WixSharp: `SingleUser` в `%AppData%`, `MultiUser` в `%ProgramData%`, для 2027 — в `%ProgramFiles%`;
+   `AllowSameVersionUpgrades`, пока до первого тега все MSI — `0.0.1`) и `CreateBundle` (`<продукт>.bundle.zip` с
+   `PackageContents.xml`) → `output/`. Имя продукта, UpgradeCode и производитель — в `build/appsettings.json`
+   (`Product`, `Vendor`). Оба берут только `Release.R2x/publish` и падают без `ClientApp/dist/index.html`. Launcher
+   убирает из сборки ассеты не-x64 платформ и XML-документацию WebView2 (`RemoveForeignPlatformAssets`). В CI `pack`
+   не идёт — только в `PublishRelease.yml`.
+   **Дальше:** `PublishRelease.yml`, CHANGELOG, `Check-Boundaries.ps1`.
 6. **Шаблон** — свой `dotnet new davydov-revit -n Davydov.Revit.Addin` (решение 24): копия структуры Nice3point + наши модули в
    исходниках, параметры; в README шаблона — с какой версией примера Nice3point он сверен и как переносить их обновления.
    **Каждый новый проект получает свои идентификаторы** (`guids` и `sourceName` в `template.json`): `AddInId` в `.addin`,

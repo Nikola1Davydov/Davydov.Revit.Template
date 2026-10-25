@@ -29,6 +29,15 @@
       <BuildType Solution="Release.R27|*" Project="Debug"/>
       <Build Project="false"/>
     </Project>
+    <Project Path="install/Installer.csproj">
+      <BuildType Solution="Debug.R25|*" Project="Debug"/>
+      <BuildType Solution="Debug.R26|*" Project="Debug"/>
+      <BuildType Solution="Debug.R27|*" Project="Debug"/>
+      <BuildType Solution="Release.R25|*" Project="Debug"/>
+      <BuildType Solution="Release.R26|*" Project="Debug"/>
+      <BuildType Solution="Release.R27|*" Project="Debug"/>
+      <Build Project="false"/>
+    </Project>
   </Folder>
   <Folder Name="/Modules/">
     <Project Path="source/Davydov.Revit.Hosting/Davydov.Revit.Hosting.csproj"/>
