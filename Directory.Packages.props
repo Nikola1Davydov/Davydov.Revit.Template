@@ -23,6 +23,10 @@
         <!-- One version for every Revit version; the Launcher's AssemblyLoadContext isolates it (decision 26) -->
         <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.12"/>
 
+        <!-- File log of ServiceDefaults: Serilog as a logging provider (decision 23) -->
+        <PackageVersion Include="Serilog.Extensions.Logging" Version="10.0.0"/>
+        <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0"/>
+
         <!-- WebView2 for Davydov.Revit.Hosting.WebView; loads in the Launcher's AssemblyLoadContext like everything else -->
         <PackageVersion Include="Microsoft.Web.WebView2" Version="1.0.4258.31"/>
 

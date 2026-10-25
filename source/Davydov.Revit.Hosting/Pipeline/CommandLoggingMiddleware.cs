@@ -20,6 +20,11 @@ public sealed partial class CommandLoggingMiddleware(ILogger<CommandLoggingMiddl
             LogSucceeded(logger, context.CommandName, context.Source, stopwatch.ElapsedMilliseconds);
             return result;
         }
+        catch (OperationCanceledException) when (context.CancellationToken.IsCancellationRequested)
+        {
+            LogCanceled(logger, context.CommandName, context.Source, stopwatch.ElapsedMilliseconds);
+            throw;
+        }
         catch (Exception exception)
         {
             LogFailed(logger, context.CommandName, context.Source, stopwatch.ElapsedMilliseconds, exception.Message);
@@ -29,6 +34,9 @@ public sealed partial class CommandLoggingMiddleware(ILogger<CommandLoggingMiddl
 
     [LoggerMessage(LogLevel.Information, "Command {Command} ({Source}) succeeded in {ElapsedMilliseconds} ms")]
     private static partial void LogSucceeded(ILogger logger, string command, string source, long elapsedMilliseconds);
+
+    [LoggerMessage(LogLevel.Information, "Command {Command} ({Source}) canceled by the caller after {ElapsedMilliseconds} ms")]
+    private static partial void LogCanceled(ILogger logger, string command, string source, long elapsedMilliseconds);
 
     [LoggerMessage(LogLevel.Information, "Command {Command} ({Source}) failed in {ElapsedMilliseconds} ms: {Reason}")]
     private static partial void LogFailed(ILogger logger, string command, string source, long elapsedMilliseconds, string reason);

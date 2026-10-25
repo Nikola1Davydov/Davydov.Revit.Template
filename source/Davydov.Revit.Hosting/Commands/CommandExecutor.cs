@@ -61,19 +61,20 @@ internal sealed partial class CommandExecutor(
         }
         catch (OperationCanceledException exception) when (context.CancellationToken.IsCancellationRequested)
         {
-            return Fail(context, CommandErrorCodes.Canceled, "The command was cancelled.", exception, unexpected: false);
+            // The caller's choice (a closed page, a superseded query), not a problem: CommandLogging records it
+            return Fail(context, CommandErrorCodes.Canceled, "The command was cancelled.", exception, LogLevel.Debug);
         }
         catch (CommandException exception)
         {
-            return Fail(context, exception.Code, exception.Message, exception, unexpected: false);
+            return Fail(context, exception.Code, exception.Message, exception, LogLevel.Warning);
         }
         catch (JsonException exception)
         {
-            return Fail(context, CommandErrorCodes.BadRequest, $"The payload of '{context.CommandName}' is invalid: {exception.Message}", exception, unexpected: false);
+            return Fail(context, CommandErrorCodes.BadRequest, $"The payload of '{context.CommandName}' is invalid: {exception.Message}", exception, LogLevel.Warning);
         }
         catch (Exception exception)
         {
-            return Fail(context, CommandErrorCodes.Failed, exception.Message, exception, unexpected: true);
+            return Fail(context, CommandErrorCodes.Failed, exception.Message, exception, LogLevel.Error);
         }
     }
 
@@ -91,15 +92,15 @@ internal sealed partial class CommandExecutor(
         return next;
     }
 
-    private CommandResult Fail(CommandContext context, string code, string message, Exception exception, bool unexpected)
+    private CommandResult Fail(CommandContext context, string code, string message, Exception exception, LogLevel level)
     {
-        if (unexpected)
+        if (level == LogLevel.Error)
         {
             LogUnexpectedFailure(logger, exception, context.CommandName, context.Source);
         }
         else
         {
-            LogExpectedFailure(logger, context.CommandName, context.Source, code, message);
+            LogExpectedFailure(logger, level, context.CommandName, context.Source, code, message);
         }
 
         if (context.Source == CommandSources.Ribbon)
@@ -113,6 +114,6 @@ internal sealed partial class CommandExecutor(
     [LoggerMessage(LogLevel.Error, "Command {Command} ({Source}) failed")]
     private static partial void LogUnexpectedFailure(ILogger logger, Exception exception, string command, string source);
 
-    [LoggerMessage(LogLevel.Warning, "Command {Command} ({Source}) refused: {Code} — {Message}")]
-    private static partial void LogExpectedFailure(ILogger logger, string command, string source, string code, string message);
+    [LoggerMessage("Command {Command} ({Source}) refused: {Code} — {Message}")]
+    private static partial void LogExpectedFailure(ILogger logger, LogLevel level, string command, string source, string code, string message);
 }

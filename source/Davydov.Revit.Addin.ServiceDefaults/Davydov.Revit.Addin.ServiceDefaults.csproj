@@ -10,6 +10,8 @@
         <PackageReference Include="Nice3point.Revit.Logging"/>
         <PackageReference Include="Nice3point.Revit.Api.RevitAPI"/>
         <PackageReference Include="Microsoft.Extensions.Hosting"/>
+        <PackageReference Include="Serilog.Extensions.Logging"/>
+        <PackageReference Include="Serilog.Sinks.File"/>
         <PackageReference Include="JetBrains.Annotations" PrivateAssets="all"/>
         <PackageReference Include="Polyfill" PrivateAssets="all"/>
     </ItemGroup>

@@ -804,6 +804,10 @@ Nice3point (`global.json` → Microsoft.Testing.Platform).
    «Palette». Фронтенд: `revit-bridge` (TS, без зависимостей, mock-режим, 8 тестов Vitest), `ClientApp` (Vite 8 +
    React 19 + TanStack Query, хуки в `src/revit/`, страница-пример; в браузере без Revit — на моках). Тесты
    `ClientAppSource` — в `Davydov.Revit.Hosting.Tests` (38 тестов).
+   **После первого запуска в Revit 2025 (2026-10-25):** файловый лог Serilog (решение 23) — `AddFileLog` в
+   ServiceDefaults, уровень из `Logging:Serilog`, общий файл для двух сессий одной версии; отмена команды клиентом
+   пишется одной строкой `CommandLogging` (`canceled by the caller`), исполнитель — только `Debug`, не `Warning`
+   (в Debug `StrictMode` React отменяет первый запрос при каждом открытии страницы). Тесты — 39.
 
 5. **Сборка и выпуск — как у Nice3point** — ModularPipelines (`build/`: compile, test, pack, publish), WixSharp
    (`installer/`) + bundle для Autodesk Store, GitHub workflows `Compile.yml` / `PublishRelease.yml`, версия из

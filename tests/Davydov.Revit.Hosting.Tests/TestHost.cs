@@ -4,6 +4,7 @@ using Davydov.Revit.Hosting.Notifications;
 using Davydov.Revit.Hosting.Pipeline;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace Davydov.Revit.Hosting.Tests;
 
@@ -25,6 +26,8 @@ internal static class TestHost
         var builder = new HostApplicationBuilder(new HostApplicationBuilderSettings { DisableDefaults = true });
         builder.ConfigureContainer(new DefaultServiceProviderFactory(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }));
         builder.Services.AddLogging();
+        builder.Services.AddSingleton<LogRecorder>();
+        builder.Services.AddSingleton<ILoggerProvider>(services => services.GetRequiredService<LogRecorder>());
         builder.Services.Configure<JsonSerializerOptions>(options =>
         {
             options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
@@ -44,6 +47,53 @@ internal static class TestHost
     public static Task<CommandResult> ExecuteAsync(this IHost host, CommandRequest request)
     {
         return host.Services.GetRequiredService<ICommandExecutor>().ExecuteAsync(request);
+    }
+}
+
+/// <summary>Keeps every log entry at <see cref="LogLevel.Information" /> and above.</summary>
+public sealed class LogRecorder : ILoggerProvider
+{
+    private readonly List<(LogLevel Level, string Message)> _entries = [];
+
+    public IReadOnlyList<(LogLevel Level, string Message)> Entries
+    {
+        get
+        {
+            lock (_entries)
+            {
+                return _entries.ToList();
+            }
+        }
+    }
+
+    public ILogger CreateLogger(string categoryName)
+    {
+        return new Logger(this);
+    }
+
+    public void Dispose()
+    {
+    }
+
+    private sealed class Logger(LogRecorder recorder) : ILogger
+    {
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull
+        {
+            return null;
+        }
+
+        public bool IsEnabled(LogLevel logLevel)
+        {
+            return true;
+        }
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            lock (recorder._entries)
+            {
+                recorder._entries.Add((logLevel, formatter(state, exception)));
+            }
+        }
     }
 }
 

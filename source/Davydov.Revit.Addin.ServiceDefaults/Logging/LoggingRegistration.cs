@@ -1,9 +1,11 @@
+using System.IO;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Davydov.Revit.Addin.ServiceDefaults.Diagnostics;
 using Nice3point.Revit.Logging;
+using Serilog;
 
 namespace Davydov.Revit.Addin.ServiceDefaults.Logging;
 
@@ -37,6 +39,7 @@ public static class LoggingRegistration
         /// <remarks>
         ///     The Revit journal keeps the whole session and may be sent to Autodesk with an error report,
         ///     so release builds write only warnings and errors there (plan, section 11).
+        ///     The details for support go to the file log instead: <c>%LOCALAPPDATA%\{Application}\logs\{Revit version}\log-{date}.txt</c>.
         /// </remarks>
         public TBuilder AddLoggingDefaults()
         {
@@ -45,15 +48,49 @@ public static class LoggingRegistration
             builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Logging:LogLevel:Default"] = nameof(LogLevel.Debug),
-                ["Logging:RevitJournal:LogLevel:Default"] = journalLevel.ToString()
+                ["Logging:RevitJournal:LogLevel:Default"] = journalLevel.ToString(),
+                ["Logging:Serilog:LogLevel:Default"] = nameof(LogLevel.Information)
             });
 
             builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
             builder.Logging.AddDebug();
             builder.Logging.AddRevitJournal(RevitApiContext.Application, options => options.ApplicationName = builder.Environment.ApplicationName);
+            builder.AddFileLog();
 
             builder.Services.AddHostedService<AppDomainExceptionsHandler>();
             builder.Services.Configure<ConsoleLifetimeOptions>(options => options.SuppressStatusMessages = true);
+
+            return builder;
+        }
+
+        /// <summary>
+        ///     Adds the daily rolling file log (decision 23).
+        /// </summary>
+        /// <returns>The <typeparamref name="TBuilder" /> for chaining.</returns>
+        /// <remarks>
+        ///     Serilog is one more provider (<c>AddSerilog</c>), not the whole logging (<c>UseSerilog</c>), which would cut the Revit journal off.
+        ///     Its level comes from <c>Logging:Serilog</c> like the other providers. The file is shared:
+        ///     two Revit sessions of the same version write to it together.
+        /// </remarks>
+        public TBuilder AddFileLog()
+        {
+            var directory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                builder.Environment.ApplicationName,
+                "logs",
+                RevitApiContext.Application.VersionNumber);
+
+            var logger = new LoggerConfiguration()
+                .MinimumLevel.Verbose()
+                .WriteTo.File(
+                    Path.Combine(directory, "log-.txt"),
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 31,
+                    shared: true,
+                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}")
+                .CreateLogger();
+
+            builder.Logging.AddSerilog(logger, dispose: true);
 
             return builder;
         }

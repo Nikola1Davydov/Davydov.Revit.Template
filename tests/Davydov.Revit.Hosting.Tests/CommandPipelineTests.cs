@@ -2,6 +2,7 @@ using System.Text.Json;
 using Davydov.Revit.Hosting.Commands;
 using Davydov.Revit.Hosting.Commands.BuiltIn;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Davydov.Revit.Hosting.Tests;
 
@@ -111,6 +112,22 @@ public sealed class CommandPipelineTests
 
         var result = await call;
         await Assert.That(result.Error?.Code).IsEqualTo(CommandErrorCodes.Canceled);
+    }
+
+    [Test]
+    public async Task Execute_CancelledCall_LogsOnceWithoutWarning()
+    {
+        using var host = TestHost.Build(commands => commands.FromTypes(typeof(ProbeCommand)).UseCommandLogging());
+        using var cancellation = new CancellationTokenSource();
+
+        var call = host.ExecuteAsync(new CommandRequest("Probe", default, CommandSources.WebView) { CancellationToken = cancellation.Token });
+        await host.Services.GetRequiredService<Recorder>().Ran.Task;
+        await cancellation.CancelAsync();
+        await call;
+
+        var entries = host.Services.GetRequiredService<LogRecorder>().Entries;
+        await Assert.That(entries.Where(entry => entry.Level >= LogLevel.Warning)).IsEmpty();
+        await Assert.That(entries.Count(entry => entry.Message.Contains("Probe (webview2) canceled by the caller"))).IsEqualTo(1);
     }
 
     [Test]
