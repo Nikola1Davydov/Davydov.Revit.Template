@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!--
+        The build pipeline (plan, phase 5), as build/ in Nice3point Revit Templates: dotnet run -c Release, with the test argument for our tests.
+        Package versions come from Directory.Packages.props like everywhere else (decision 22).
+    -->
+
+    <PropertyGroup>
+        <Nullable>enable</Nullable>
+        <OutputType>Exe</OutputType>
+        <LangVersion>latest</LangVersion>
+        <ImplicitUsings>true</ImplicitUsings>
+        <TargetFramework>net10.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Sourcy.DotNet"/>
+        <PackageReference Include="Shouldly"/>
+        <PackageReference Include="ModularPipelines"/>
+        <PackageReference Include="ModularPipelines.Git"/>
+        <PackageReference Include="ModularPipelines.DotNet"/>
+        <PackageReference Include="ModularPipelines.Node"/>
+        <PackageReference Include="Microsoft.VisualStudio.SolutionPersistence"/>
+        <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations"/>
+        <PackageReference Include="JetBrains.Annotations" PrivateAssets="all"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest"/>
+    </ItemGroup>
+
+</Project>
