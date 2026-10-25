@@ -3,6 +3,9 @@
 Revit 2025–2027 add-in, created from the `davydov-revit` template: [Nice3point](https://github.com/Nice3point/RevitTemplates)
 SDK, Toolkit and `Host` + `ServiceDefaults`, an isolated Launcher, a command pipeline and a React UI in WebView2.
 
+How it works — [ARCHITECTURE.md](ARCHITECTURE.md). Rules and skills for people and AI agents — [AGENTS.md](AGENTS.md)
+(`CLAUDE.md` imports it).
+
 ## Structure
 
 | Project | What it is |

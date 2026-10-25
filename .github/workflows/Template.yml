@@ -44,10 +44,14 @@ jobs:
         run: |
           # Placeholder names, and references to this repository's plan or to AnalyseTool that mean nothing in a new project
           $leftovers = Get-ChildItem -Recurse -File | Select-String -Pattern 'Davydov\.Revit\.Addin|Davydov_Revit_Addin|davydov-revit-addin|<VendorId>Davydov<|\(plan, |docs/PLAN|AnalyseTool'
-          $extra = 'tests', 'docs', 'template', 'LICENSE', 'build/RepositoryModules.cs', '.github/workflows/Template.yml' | Where-Object { Test-Path $_ }
+          $extra = @('tests', 'docs', 'template', 'LICENSE', 'build/RepositoryModules.cs', '.github/workflows/Template.yml' | Where-Object { Test-Path $_ })
+          # The agent files of the add-in, not the ones of this repository (those are in Russian)
+          $missing = @('AGENTS.md', 'CLAUDE.md', 'ARCHITECTURE.md', '.agents/skills/add-ribbon-button/SKILL.md', '.agents/skills/add-command/SKILL.md', '.agents/skills/add-page/SKILL.md' | Where-Object { -not (Test-Path $_) })
+          if ((Test-Path AGENTS.md) -and (Get-Content AGENTS.md -Raw) -match '\p{IsCyrillic}') { $extra += 'AGENTS.md of the template repository' }
+          $missing | ForEach-Object { "Missing from the project: $_" }
           $leftovers | ForEach-Object { "$($_.Path):$($_.LineNumber): $($_.Line.Trim())" }
           $extra | ForEach-Object { "Not part of the template: $_" }
-          if ($leftovers -or $extra) { exit 1 }
+          if ($leftovers -or $extra -or $missing) { exit 1 }
 
       # On a build server GitVersion needs exactly one remote, and the new repository has none: a fixed version skips
       # GitVersion here (the CI of this repository checks it)

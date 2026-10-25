@@ -138,7 +138,9 @@
             "**/ClientApp/dist/**",
             "**/*.user",
             "README.md",
-            ".github/workflows/Template.yml"
+            ".github/workflows/Template.yml",
+            "AGENTS.md",
+            "CLAUDE.md"
           ]
         }
       ]
