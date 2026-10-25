@@ -53,9 +53,13 @@ jobs:
           $extra | ForEach-Object { "Not part of the template: $_" }
           if ($leftovers -or $extra) { exit 1 }
 
+      # On a build server GitVersion needs exactly one remote, and the new repository has none: a fixed version skips
+      # GitVersion here (the CI of this repository checks it)
       - name: Compile the project
         shell: pwsh
         working-directory: ${{ runner.temp }}/Acme.Revit.Tools
+        env:
+          Build__Version: 0.0.1-template.1
         run: |
           git init -q -b main
           git add -A
