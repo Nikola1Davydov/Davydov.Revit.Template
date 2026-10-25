@@ -17,7 +17,7 @@ namespace Davydov.Revit.Hosting.WebView.Controls;
 /// <summary>
 ///     The security choice of <c>AddWebView</c>.
 /// </summary>
-/// <param name="RestrictNavigation">Whether only the add-in's own pages may load and send commands (<c>RestrictNavigation()</c>).</param>
+/// <param name="RestrictNavigation">Whether only the add-in's own pages may load and send commands; on unless <c>AllowAnyNavigation()</c>.</param>
 internal sealed record WebViewSecurity(bool RestrictNavigation);
 
 /// <summary>
