@@ -22,6 +22,7 @@
         <PackageReference Include="ModularPipelines.Node"/>
         <PackageReference Include="Microsoft.VisualStudio.SolutionPersistence"/>
         <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations"/>
+        <PackageReference Include="Autodesk.PackageBuilder"/>
         <PackageReference Include="JetBrains.Annotations" PrivateAssets="all"/>
     </ItemGroup>
 

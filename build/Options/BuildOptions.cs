@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Build.Options;
 
 /// <summary>
@@ -18,4 +20,9 @@ public sealed record BuildOptions
     ///     1.0.0
     /// </example>
     public string? Version { get; init; }
+
+    /// <summary>
+    ///     Path to build output
+    /// </summary>
+    [Required] public string OutputDirectory { get; init; } = null!;
 }

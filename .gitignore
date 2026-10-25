@@ -429,3 +429,6 @@ FodyWeavers.xsd
 
 # ClientApp build output (npm run build)
 source/*/ClientApp/dist/
+
+# Artifacts of the build pipeline: installers and the Autodesk bundle (dotnet run --project build -- pack)
+/output/

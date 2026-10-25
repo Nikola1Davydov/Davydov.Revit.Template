@@ -44,4 +44,15 @@ dotnet run -c Release --project build -- test
 
 В CI (`.github/workflows/Compile.yml`, на `push` в `main` и на PR) — то же с `test`, но без тестов внутри Revit.
 
+Установщики и пакет для Autodesk App Store — в `output/`:
+
+```
+dotnet run -c Release --project build -- pack
+```
+
+`…-SingleUser.msi` ставит плагин текущему пользователю, `…-MultiUser.msi` — всем (нужны права администратора),
+`<продукт>.bundle.zip` — для Autodesk App Store. Сборку начинает очистка всех `bin/` и `obj/`. При первом запуске
+ставится WiX 7, его EULA (Open Source Maintenance Fee) принимается командой `wix eula accept wix7`. Имя продукта,
+UpgradeCode и производитель — в `build/appsettings.json`.
+
 Проверки в живом Revit — [docs/manual-tests.md](docs/manual-tests.md).

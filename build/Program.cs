@@ -12,9 +12,18 @@ builder.Configuration.AddUserSecrets<Program>();
 builder.Configuration.AddEnvironmentVariables();
 
 builder.Services.AddOptions<BuildOptions>().Bind(builder.Configuration.GetSection("Build")).ValidateDataAnnotations();
+builder.Services.AddOptions<ProductOptions>().Bind(builder.Configuration.GetSection("Product")).ValidateDataAnnotations();
+builder.Services.AddOptions<VendorOptions>().Bind(builder.Configuration.GetSection("Vendor")).ValidateDataAnnotations();
 
 builder.Services.AddModule<CompileClientAppModule>();
 builder.Services.AddModule<CompileProjectModule>();
+
+if (args.Contains("pack"))
+{
+    builder.Services.AddModule<CleanProjectModule>();
+    builder.Services.AddModule<CreateBundleModule>();
+    builder.Services.AddModule<CreateInstallerModule>();
+}
 
 // Our tests only: the template of phase 6 leaves this block and the Test modules out (plan, phase 6)
 if (args.Contains("test"))

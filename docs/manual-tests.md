@@ -17,6 +17,20 @@
 2. Для проверки соседства в той же папке `Addins\<год>\` должен лежать AnalyseTool (или другой плагин со своими
    версиями Microsoft.Extensions.\*).
 
+## Установщик (фаза 5)
+
+`dotnet run -c Release --project build -- pack`, затем на машине **без Debug-сборки плагина** (установщик пишет в ту же
+папку `Addins\<год>`, куда её раскладывает `Debug.R2x`, а удаление её сотрёт):
+
+| # | Шаг | Ожидается |
+| --- | --- | --- |
+| 1 | Запустить `output\…-SingleUser.msi` | Дерево компонентов с Revit 2025, 2026, 2027; установка без прав администратора |
+| 2 | Открыть `%AppData%\Autodesk\Revit\Addins6` | `Davydov.Revit.Addin.Launcher.addin` и папка `Davydov.Revit.Addin.Launcher` с `ClientApp\dist` |
+| 3 | Запустить Revit 2026, нажать «Sample page» | Страница открывается из `dist` (Release, без dev-сервера) |
+| 4 | Собрать ещё раз (`pack`) и поставить новый MSI поверх | В «Программах и компонентах» одна запись, не две |
+| 5 | Удалить через «Программы и компоненты» | Папки и `.addin` в `Addins\<год>` удалены |
+| 6 | `…-MultiUser.msi` (от администратора) | 2025, 2026 — в `%ProgramData%\Autodesk\Revit\Addins`, 2027 — в `%ProgramFiles%\Autodesk\Revit\Addins` |
+
 ## Фаза 1 — скелет
 
 Для каждой версии Revit 2025, 2026, 2027:
