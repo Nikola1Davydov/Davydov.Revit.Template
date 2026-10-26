@@ -10,6 +10,8 @@
     <PropertyGroup>
         <EnableDynamicLoading>true</EnableDynamicLoading>
         <LaunchRevit>true</LaunchRevit>
+        <!-- Roslyn of the Scripting module brings its messages in 13 languages; the add-in speaks English -->
+        <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
         <Configurations>Debug.R25;Debug.R26;Debug.R27</Configurations>
         <Configurations>$(Configurations);Release.R25;Release.R26;Release.R27</Configurations>
     </PropertyGroup>

@@ -142,3 +142,20 @@ Debug-сборка: сервер включён. Порт — базовый и�
 | 10 | Release-сборка без `Mcp:Enabled` | В журнале `MCP server is off`, порт не слушается |
 | 11 | «Dev page» → вкладка «MCP» | `listening` и адрес; команда для Claude Code и JSON с токеном, скрытым до последних 4 символов; «Copy» кладёт в буфер полный текст — его можно сразу выполнить в терминале (шаг 2); список инструментов |
 | 12 | Второй Revit той же версии → «Dev page» → «MCP» | `port busy` и подсказка; токена нет |
+
+## Выполнение C# (решение 42)
+
+Debug-сборка: `ExecuteCode` включена. В Claude Code (сервер подключён, раздел MCP) — новая сессия.
+
+| # | Шаг | Ожидается |
+| --- | --- | --- |
+| 1 | Запустить Revit | Плагин стартует: Roslyn грузится в ALC плагина без ошибок; в `/mcp` есть `ExecuteCode` |
+| 2 | «Выполни в Revit: верни название документа и число стен» | Агент вызывает `ExecuteCode`, ответ с названием и числом; в журнале `Command ExecuteCode (mcp) succeeded` |
+| 3 | Код с опечаткой | `compile_failed` со строкой `script.cs(N,…)` по строкам присланного кода |
+| 4 | `throw new InvalidOperationException("x");` в третьей строке | `script_failed: InvalidOperationException: x (script.cs:line 3)` |
+| 5 | `TaskDialog.Show("Script", doc.Title);` | Окно в Revit; после закрытия — результат `null` |
+| 6 | Код с `Transaction`, который переименовывает уровень | Уровень переименован, отмена (Ctrl+Z) возвращает имя |
+| 7 | Вернуть `doc.ActiveView` (объект Revit) | Ответ — JSON или текст типа, Revit не падает |
+| 8 | Вкладка «Commands» Dev-страницы, `ExecuteCode`, `{ "code": "return 1 + 1;" }` | `2` |
+| 9 | Release-сборка без `Scripting:Enabled` | Команды `ExecuteCode` нет ни в `/mcp`, ни в «Commands» |
+| 10 | Двадцать вызовов подряд | Память Revit не растёт заметно: сборки скриптов выгружаются |

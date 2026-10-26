@@ -48,8 +48,10 @@ public static partial class Host
 
         //Commands and their pipeline; the document rule is the add-in's own (ActiveDocument, DocumentCheckMiddleware)
         builder.Services.AddScoped<ActiveDocument>();
+        //Davydov.Revit.Hosting.Scripting: ExecuteCode runs C# inside Revit — full trust, on in Debug, Scripting:Enabled otherwise
         builder.AddRevitCommands(commands => commands
             .FromAssemblyOf<Application>()
+            .AddScripting(builder)
             .UseCommandLogging()
             .Use<DocumentCheckMiddleware>());
 
