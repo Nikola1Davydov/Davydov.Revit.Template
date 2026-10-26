@@ -15,6 +15,7 @@ How it works — [ARCHITECTURE.md](ARCHITECTURE.md). Rules and skills for people
 | `source/Davydov.Revit.Addin.ServiceDefaults` | logging (Revit journal and a file log), configuration layers, JSON, DI validation |
 | `source/Davydov.Revit.Hosting` | module: the command pipeline, `IRevitDispatcher`, Revit lifetime, user settings |
 | `source/Davydov.Revit.Hosting.WebView` | module: WebView2 windows and the dock pane, the bridge to React (`revit-bridge`) |
+| `source/Davydov.Revit.Hosting.Mcp` | module: an MCP server inside Revit — AI clients call the commands marked with `[McpTool]` |
 | `build/` | the build pipeline (ModularPipelines) |
 | `install/` | the `.msi` builder (WixSharp) |
 

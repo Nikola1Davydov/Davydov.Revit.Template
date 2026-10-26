@@ -58,6 +58,9 @@ public static partial class Host
             .DockPane(new Guid("CA1A2580-51FE-4199-A6B5-62760DC2D3CC"), "Davydov.Revit.Addin", "/dock")
             .AllowAnyNavigation());
 
+        //Davydov.Revit.Hosting.Mcp: AI clients call the commands marked with [McpTool]; on in Debug, Mcp:Enabled otherwise
+        builder.AddMcp(application, basePort: 47250);
+
 #if DEBUG
         builder.Services.AddHostedService<StartupProbe>();
         builder.Services.Configure<DevOptions>(builder.Configuration.GetSection(DevOptions.SectionName));

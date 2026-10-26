@@ -4,6 +4,9 @@
   color-scheme: light dark;
   font-family: "Segoe UI", system-ui, sans-serif;
   font-size: 14px;
+  /* Paint the page itself: a transparent page shows the host behind it — black in a Revit dock pane — under dark text */
+  background: Canvas;
+  color: CanvasText;
 }
 
 body {
@@ -152,4 +155,56 @@ td {
   overflow: auto;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.mcp .badge.ok {
+  color: #2f855a;
+}
+
+.mcp .badge.error {
+  color: #c42a2a;
+}
+
+/* Long paths and URLs wrap in the narrow dock pane */
+.mcp code {
+  overflow-wrap: anywhere;
+}
+
+.mcp .steps {
+  padding-left: 20px;
+}
+
+.mcp .steps li {
+  margin-bottom: 6px;
+}
+
+.mcp .snippet {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 4px 0 8px;
+}
+
+.mcp .snippet pre {
+  flex: 1;
+  margin: 0;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.mcp .tools {
+  padding-left: 18px;
+}
+
+.mcp .tools li {
+  margin-bottom: 4px;
+}
+
+.mcp .tools .badge {
+  margin-left: 6px;
 }

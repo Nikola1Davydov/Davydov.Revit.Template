@@ -26,6 +26,16 @@
     "BADACEF9-1500-4A6F-9559-F921B1DEBEB5"
   ],
   "symbols": {
+    "mcpBasePort": {
+      "type": "generated",
+      "generator": "random",
+      "parameters": {
+        "low": 41000,
+        "high": 48900
+      },
+      "replaces": "47250",
+      "description": "The MCP base port in Host.cs: its own for every add-in, so two add-ins listen side by side"
+    },
     "HostIdentifier": {
       "type": "bind",
       "binding": "HostIdentifier"

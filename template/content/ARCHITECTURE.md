@@ -11,11 +11,12 @@ How the add-in starts, where the code goes and why. The rules an agent must not 
 | `source/Davydov.Revit.Addin.ServiceDefaults` | Logging, configuration layers, JSON options, DI validation. |
 | `source/Davydov.Revit.Hosting` | Module: the command pipeline, `IRevitDispatcher`, Revit lifetime, user settings, notifications. No WPF. |
 | `source/Davydov.Revit.Hosting.WebView` | Module: WebView2 windows, the dock pane, the transport to the pipeline and `revit-bridge` for the pages. |
+| `source/Davydov.Revit.Hosting.Mcp` | Module: an MCP server inside Revit, the transport of AI clients to the pipeline. No WPF. |
 | `build/` | The build pipeline (ModularPipelines): boundary check, `ClientApp`, compile, `pack`. |
 | `install/` | The `.msi` builder (WixSharp). |
 
-The modules are the add-in's own code, not a dependency: change them as the add-in needs. Only `Davydov.Revit.Hosting`
-stays headless, so the pipeline can run without the UI.
+The modules are the add-in's own code, not a dependency: change them as the add-in needs. `Davydov.Revit.Hosting` and
+`Davydov.Revit.Hosting.Mcp` stay headless, so the pipeline can run without the UI.
 
 ## Startup and isolation
 
@@ -43,6 +44,7 @@ that the proxy exists.
 * `AddRevitHosting(application)` — `IRevitDispatcher`, `IRevitLifetime`, `IUserNotifier`.
 * `AddRevitCommands(...)` — the command registry, the middleware of the pipeline, `ICommandExecutor` and `ICommandSender`.
 * `AddWebView(application, ...)` — windows, the dock pane and the page source.
+* `AddMcp(application, basePort)` — the MCP server for AI clients.
 
 Classes get their dependencies through the constructor. Only ribbon buttons, which Revit creates itself, resolve
 services with `Host.GetService<T>()`.
@@ -88,6 +90,25 @@ Any page loaded in the WebView can call commands, so by default only the add-in'
 in the system browser, and messages from another origin are dropped. `AllowAnyNavigation()` in `AddWebView` turns the
 protection off — `Host.cs` of this template calls it.
 
+## AI clients (MCP)
+
+`Davydov.Revit.Hosting.Mcp` is an MCP server inside Revit: Claude Code, Cursor or VS Code connect to
+`http://localhost:<port>/mcp` over Streamable HTTP while Revit runs; no separate process. A tool is a pipeline command
+marked with `[McpTool]` — the call goes through the same middleware as a page or a button, with the source `mcp` — and
+nothing else is visible to the client. A command failure is a tool result with `isError` and `code: message`.
+
+* On in Debug, off in Release; `Mcp:Enabled` in the settings turns it on or off.
+* The port: the base port of `AddMcp` for Revit 2025, plus one per later version, so several Revit versions run side by
+  side; `Mcp:Port` overrides it. A second Revit of the same version finds the port busy, logs a warning and runs without MCP.
+* Only `localhost`, a bearer token on every request, and no request with an `Origin` header — a web page in the user's
+  browser cannot reach the model.
+* `%LOCALAPPDATA%\Davydov.Revit.Addin\<year>\mcp.json` holds the address, the token (kept across Revit sessions) and the
+  `claude mcp add …` command for Claude Code.
+* `IMcpEndpoint.GetInfo()` returns the same details for a page; in Debug the «MCP» tab of the Dev page shows them.
+* `McpHttpServer` serves both protocol revisions: the `initialize` handshake gets a session (`Mcp-Session-Id`), the
+  session-less revision of 2026 gets a server per request. The protocol itself is the SDK's (`ModelContextProtocol.Core`);
+  its ASP.NET Core package does not fit — Revit has no ASP.NET Core.
+
 ## Settings and logs
 
 Configuration layers, a later one overrides an earlier one:
@@ -105,7 +126,8 @@ Logs go to the Revit journal (from `Information` in Debug, from `Warning` in Rel
 the `Logging` section.
 
 A Debug build also keeps the last records in memory (`LogBuffer`) for the «Dev page» button of the «Dev» ribbon panel:
-the `/dev` route of the dock pane shows the live log and runs any registered command with a JSON payload typed by hand.
+the `/dev` route of the dock pane shows the live log, runs any registered command with a JSON payload typed by hand
+and, on its «MCP» tab, shows how to connect an AI client — the command for Claude Code and the JSON for other clients.
 The page polls `GetLogEntries`; the records of that polling are dropped from the buffer.
 
 ## Boundaries
@@ -113,7 +135,7 @@ The page polls `GetLogEntries`; the records of that polling are dropped from the
 `build/Check-Boundaries.ps1` runs on every pipeline run and fails it on:
 
 * a project or package reference that the table at the top of the script does not allow;
-* WPF in `Davydov.Revit.Hosting`, or in `Features/` and `Services/` of the add-in;
+* WPF in `Davydov.Revit.Hosting` or `Davydov.Revit.Hosting.Mcp`, or in `Features/` and `Services/` of the add-in;
 * `ActiveUIDocument` in `Features/` and `Services/`, outside `ActiveDocument.cs` and lines marked `// AllowActiveDocument:`;
 * a type of the add-in or the modules in the Launcher code.
 

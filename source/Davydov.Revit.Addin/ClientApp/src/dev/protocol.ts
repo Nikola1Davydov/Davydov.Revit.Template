@@ -22,3 +22,17 @@ export type LogEntry = {
 export type LogPage = { entries: LogEntry[]; lastSequence: number };
 
 export const LOG_LEVELS: LogLevel[] = ["Trace", "Debug", "Information", "Warning", "Error", "Critical"];
+
+/** The Debug-only command with the state of the MCP server. */
+export const MCP_STATUS_COMMAND = "GetMcpStatus";
+
+/** The answer of GetMcpStatus (McpEndpointInfo in Davydov.Revit.Hosting.Mcp). */
+export type McpStatus = {
+  state: "Off" | "Listening" | "PortBusy";
+  url: string;
+  name: string;
+  token: string | null;
+  claudeCode: string | null;
+  connectionFile: string;
+  tools: { name: string; description: string | null; readOnly: boolean }[];
+};

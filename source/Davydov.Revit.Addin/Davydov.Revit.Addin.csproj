@@ -38,6 +38,7 @@
         <ProjectReference Include="..\Davydov.Revit.Addin.ServiceDefaults\Davydov.Revit.Addin.ServiceDefaults.csproj"/>
         <ProjectReference Include="..\Davydov.Revit.Hosting\Davydov.Revit.Hosting.csproj"/>
         <ProjectReference Include="..\Davydov.Revit.Hosting.WebView\Davydov.Revit.Hosting.WebView.csproj"/>
+        <ProjectReference Include="..\Davydov.Revit.Hosting.Mcp\Davydov.Revit.Hosting.Mcp.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

@@ -12,6 +12,7 @@ registerMocks({
     { name: "CountElementsByCategory", description: "Counts the model elements by category.", requestType: null, responseType: "IReadOnlyList`1" },
     { name: "GetActiveDocument", description: "Returns the active document.", requestType: null, responseType: "DocumentSummary" },
     { name: "GetLogEntries", description: "Returns the log records after the given sequence number.", requestType: "GetLogEntriesRequest", responseType: "LogPage" },
+    { name: "GetMcpStatus", description: "Returns the state of the MCP server.", requestType: null, responseType: "McpEndpointInfo" },
     { name: "Host.GetCommands", description: "Lists the registered commands.", requestType: null, responseType: "IReadOnlyList`1" },
   ],
 
@@ -31,6 +32,23 @@ registerMocks({
       });
     }
     return { entries: entries.filter((entry) => entry.sequence > after), lastSequence: logSequence };
+  },
+
+  GetMcpStatus: () => {
+    const token = "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF";
+    const url = "http://localhost:47250/mcp";
+    return {
+      state: "Listening",
+      url,
+      name: "davydov-revit-addin-2026",
+      token,
+      claudeCode: `claude mcp add --transport http davydov-revit-addin-2026 ${url} --header "Authorization: Bearer ${token}"`,
+      connectionFile: String.raw`C:\Users\you\AppData\Local\Davydov.Revit.Addin\2026\mcp.json`,
+      tools: [
+        { name: "CountElementsByCategory", description: "Counts the model elements of the active document by category.", readOnly: true },
+        { name: "GetActiveDocument", description: "Returns the key and title of the active document.", readOnly: true },
+      ],
+    };
   },
 
   GetActiveDocument: () => ({ key: "C:\\Models\\Sample.rvt", title: "Sample.rvt" }),

@@ -19,12 +19,15 @@
     <ItemGroup>
         <PackageReference Include="TUnit"/>
         <PackageReference Include="Microsoft.Extensions.Hosting"/>
+        <!-- The MCP client of the SDK talks to the module's server as Claude Code would -->
+        <PackageReference Include="ModelContextProtocol.Core"/>
         <PackageReference Include="JetBrains.Annotations" PrivateAssets="all"/>
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\source\Davydov.Revit.Hosting\Davydov.Revit.Hosting.csproj"/>
         <ProjectReference Include="..\..\source\Davydov.Revit.Hosting.WebView\Davydov.Revit.Hosting.WebView.csproj"/>
+        <ProjectReference Include="..\..\source\Davydov.Revit.Hosting.Mcp\Davydov.Revit.Hosting.Mcp.csproj"/>
     </ItemGroup>
 
 </Project>

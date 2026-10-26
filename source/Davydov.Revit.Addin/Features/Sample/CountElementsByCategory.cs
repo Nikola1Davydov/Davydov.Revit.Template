@@ -1,11 +1,13 @@
 using Davydov.Revit.Addin.Services.Documents;
 using Davydov.Revit.Hosting.Commands;
+using Davydov.Revit.Hosting.Mcp;
 
 namespace Davydov.Revit.Addin.Features.Sample;
 
 /// <summary>
-///     The command of the sample page: reads the model in batches and reports progress.
+///     The command of the sample page: reads the model in batches and reports progress. Also an MCP tool.
 /// </summary>
+[McpTool(ReadOnly = true)]
 [Command(Description = "Counts the model elements of the active document by category, in batches with progress.")]
 public sealed class CountElementsByCategory(ActiveDocument document) : ICommand<IReadOnlyList<CategoryCount>>
 {

@@ -1,12 +1,14 @@
 using Davydov.Revit.Addin.Services.Documents;
 using Davydov.Revit.Hosting.Commands;
+using Davydov.Revit.Hosting.Mcp;
 
 namespace Davydov.Revit.Addin.Features.Documents;
 
 /// <summary>
-///     The active document for the pages: its key goes into the <c>Document</c> header of their calls.
+///     The active document for the pages: its key goes into the <c>Document</c> header of their calls. Also an MCP tool.
 /// </summary>
 /// <remarks>Call it without the <c>Document</c> header: it asks which document is active, it does not work with one.</remarks>
+[McpTool(ReadOnly = true)]
 [Command(Description = "Returns the key and title of the active document, or null when no document is open.")]
 public sealed class GetActiveDocument(ActiveDocument document) : ICommand<DocumentSummary?>
 {
