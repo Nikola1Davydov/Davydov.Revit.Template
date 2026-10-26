@@ -104,6 +104,10 @@ Logs go to the Revit journal (from `Information` in Debug, from `Warning` in Rel
 `%LOCALAPPDATA%\Davydov.Revit.Addin\logs\<year>\log-<date>.txt` (from `Information`, a file per day). Both levels are set in
 the `Logging` section.
 
+A Debug build also keeps the last records in memory (`LogBuffer`) for the «Dev page» button of the «Dev» ribbon panel:
+the `/dev` route of the dock pane shows the live log and runs any registered command with a JSON payload typed by hand.
+The page polls `GetLogEntries`; the records of that polling are dropped from the buffer.
+
 ## Boundaries
 
 `build/Check-Boundaries.ps1` runs on every pipeline run and fails it on:

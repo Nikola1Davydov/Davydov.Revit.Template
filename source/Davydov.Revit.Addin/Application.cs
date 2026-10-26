@@ -51,6 +51,9 @@ public class Application : AsyncExternalApplication
 
         devPanel.AddButton<UserSettingsCommand>("User\nsettings")
             .WithIcons("RibbonIcon");
+
+        devPanel.AddButton<DevPageCommand>("Dev\npage")
+            .WithIcons("RibbonIcon");
 #endif
     }
 }

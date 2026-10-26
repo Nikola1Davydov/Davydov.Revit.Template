@@ -57,3 +57,99 @@ td {
 .error {
   color: #c42a2a;
 }
+
+/* The Dev page of the dock pane (Debug only) */
+
+.dev .tabs {
+  margin-left: auto;
+}
+
+.dev .tabs button.active {
+  font-weight: 600;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.toolbar input[type="text"],
+.toolbar input:not([type]) {
+  flex: 1;
+  min-width: 120px;
+}
+
+.muted {
+  opacity: 0.7;
+  font-size: 12px;
+}
+
+.log-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 12px;
+  max-height: calc(100vh - 110px);
+  overflow: auto;
+}
+
+.log-list li {
+  display: grid;
+  grid-template-columns: auto auto auto 1fr;
+  gap: 8px;
+  padding: 1px 0;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.log-list .time,
+.log-list .category {
+  opacity: 0.6;
+  white-space: nowrap;
+}
+
+.log-list .message,
+.log-list .exception {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.log-list .exception {
+  grid-column: 1 / -1;
+  margin: 0 0 4px;
+  opacity: 0.8;
+}
+
+.log-list .level-warning .level {
+  color: #b7791f;
+}
+
+.log-list .level-error .level,
+.log-list .level-critical .level {
+  color: #c42a2a;
+  font-weight: 600;
+}
+
+.log-list .level-trace,
+.log-list .level-debug {
+  opacity: 0.6;
+}
+
+.commands textarea,
+.commands .result {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 12px;
+}
+
+.commands .result {
+  margin: 0;
+  max-height: 50vh;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

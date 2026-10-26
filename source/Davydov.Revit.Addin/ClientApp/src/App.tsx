@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { bridge } from "revit-bridge";
+import { DevPage } from "./dev/DevPage";
 import { useActiveDocument, useCommandMutation } from "./revit/hooks";
 
 type CategoryCount = { category: string; count: number };
@@ -20,6 +21,8 @@ export function App() {
   const route = useRoute();
   const document = useActiveDocument();
   const count = useCommandMutation<CategoryCount[]>("CountElementsByCategory");
+
+  if (route === "/dev") return <DevPage />;
 
   return (
     <main className={route === "/dock" ? "page compact" : "page"}>

@@ -61,6 +61,9 @@ public static partial class Host
 #if DEBUG
         builder.Services.AddHostedService<StartupProbe>();
         builder.Services.Configure<DevOptions>(builder.Configuration.GetSection(DevOptions.SectionName));
+        // The «Dev» page of the dock pane reads the log from memory; the levels of the Logging section apply here too
+        builder.Services.AddSingleton<LogBuffer>();
+        builder.Services.AddSingleton<ILoggerProvider, LogBufferProvider>();
 #endif
 
         _host = builder.Build();
