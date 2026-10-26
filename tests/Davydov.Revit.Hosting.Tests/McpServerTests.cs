@@ -119,6 +119,8 @@ public sealed class McpServerTests
 
         await client.CallToolAsync("McpProgress", progress: progress);
 
+        // The server sends the progress before the result; the client may still hand it to IProgress a moment later
+        await progress.WaitForAsync(0.5f, TimeSpan.FromSeconds(2));
         await Assert.That(progress.Values.Select(value => value.Progress)).Contains(0.5f);
     }
 
@@ -250,6 +252,15 @@ public sealed class McpServerTests
             lock (_values)
             {
                 _values.Add(value);
+            }
+        }
+
+        public async Task WaitForAsync(float progress, TimeSpan timeout)
+        {
+            var deadline = DateTime.UtcNow + timeout;
+            while (!Values.Any(value => value.Progress.Equals(progress)) && DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(20);
             }
         }
     }
