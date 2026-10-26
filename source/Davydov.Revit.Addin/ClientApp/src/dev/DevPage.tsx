@@ -3,12 +3,14 @@ import { useState } from "react";
 import { bridge } from "revit-bridge";
 import { CommandsTab } from "./CommandsTab";
 import { LogsTab } from "./LogsTab";
-import { type CommandInfo, DEV_COMMAND } from "./protocol";
+import { McpTab } from "./McpTab";
+import { type CommandInfo, DEV_COMMAND, MCP_STATUS_COMMAND } from "./protocol";
 
-type Tab = "logs" | "commands";
+type Tab = "logs" | "commands" | "mcp";
 
 /**
- * The «Dev» page of the dock pane (Debug only): the live log of the add-in and a form that runs any registered command.
+ * The «Dev» page of the dock pane (Debug only): the live log of the add-in, a form that runs any registered command and
+ * how to connect an AI client to the MCP server.
  * The dist ships the page in Release too, where the Debug-only commands are absent: it says so instead of polling.
  */
 export function DevPage() {
@@ -19,6 +21,7 @@ export function DevPage() {
   });
 
   const isDebug = commands.data?.some((command) => command.name === DEV_COMMAND) ?? false;
+  const hasMcp = commands.data?.some((command) => command.name === MCP_STATUS_COMMAND) ?? false;
 
   return (
     <main className="page compact dev">
@@ -32,6 +35,9 @@ export function DevPage() {
           <button className={tab === "commands" ? "active" : ""} onClick={() => setTab("commands")}>
             Commands
           </button>
+          <button className={tab === "mcp" ? "active" : ""} onClick={() => setTab("mcp")}>
+            MCP
+          </button>
         </nav>
       </header>
 
@@ -39,6 +45,7 @@ export function DevPage() {
       {commands.isError && <p className="error">{commands.error.message}</p>}
       {commands.isSuccess && tab === "logs" && (isDebug ? <LogsTab /> : <p>The log is available in a Debug build only.</p>)}
       {commands.isSuccess && tab === "commands" && <CommandsTab commands={commands.data} />}
+      {commands.isSuccess && tab === "mcp" && (hasMcp ? <McpTab /> : <p>The MCP details are available in a Debug build only.</p>)}
     </main>
   );
 }

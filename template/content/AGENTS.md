@@ -25,7 +25,8 @@ Read the skill before the task it covers:
   the user goes through `IUserNotifier`.
 * The Launcher (`source/Davydov.Revit.Addin.Launcher`) uses no type of the add-in or the modules — only names in
   strings. Their types would load into the Revit context and bypass the add-in's `AssemblyLoadContext`.
-* `Davydov.Revit.Hosting` stays headless: no WPF.
+* `Davydov.Revit.Hosting` and `Davydov.Revit.Hosting.Mcp` stay headless: no WPF.
+* An AI client (MCP) sees only commands marked with `[McpTool]`: open a command to it deliberately, never by default.
 * A ribbon button is a class in `Commands/` and a same-named proxy line in the Launcher's `Proxies.cs`. A button class
   keeps its name and namespace: Revit binds keyboard shortcuts and the Quick Access Toolbar to them.
 * Logging goes through source-generated `[LoggerMessage]` methods, not the `Log*` extension methods of `ILogger`.

@@ -25,7 +25,7 @@
 | # | Шаг | Ожидается |
 | --- | --- | --- |
 | 1 | Запустить `output\…-SingleUser.msi` | Дерево компонентов с Revit 2025, 2026, 2027; установка без прав администратора |
-| 2 | Открыть `%AppData%\Autodesk\Revit\Addins6` | `Davydov.Revit.Addin.Launcher.addin` и папка `Davydov.Revit.Addin.Launcher` с `ClientApp\dist` |
+| 2 | Открыть `%AppData%\Autodesk\Revit\Addins\2026` | `Davydov.Revit.Addin.Launcher.addin` и папка `Davydov.Revit.Addin.Launcher` с `ClientApp\dist` |
 | 3 | Запустить Revit 2026, нажать «Sample page» | Страница открывается из `dist` (Release, без dev-сервера) |
 | 4 | Собрать ещё раз (`pack`) и поставить новый MSI поверх | В «Программах и компонентах» одна запись, не две |
 | 5 | Удалить через «Программы и компоненты» | Папки и `.addin` в `Addins\<год>` удалены |
@@ -38,7 +38,7 @@
 | # | Шаг | Ожидается |
 | --- | --- | --- |
 | 1 | `dotnet new davydov-revit -n Acme.Revit.Tools --vendor Acme`, `git init`, коммит, `dotnet run -c Release --project build -- pack` | Сборка, `Acme.Revit.Tools-…-SingleUser.msi`, `…-MultiUser.msi`, `Acme.Revit.Tools.bundle.zip` |
-| 2 | Создать второй плагин (`-n Contoso.Revit.Tools`), собрать оба в `Debug.R26` | В `Addins6` два `.addin` и две папки Launcher |
+| 2 | Создать второй плагин (`-n Contoso.Revit.Tools`), собрать оба в `Debug.R26` | В `Addins\2026` два `.addin` и две папки Launcher |
 | 3 | Запустить Revit 2026 | Две вкладки на ленте, кнопки обоих работают; «Status» каждого — свой `Load context` (`Acme.Revit.Tools`, `Contoso.Revit.Tools`) |
 | 4 | «Sample page» в каждом | Свои окна; логи и `usersettings` — в своих папках `%LOCALAPPDATA%` и `%AppData%` |
 | 5 | `dotnet new uninstall Davydov.Revit.Templates` | — |
@@ -107,7 +107,6 @@ Debug-сборка грузит dev-сервер: перед запуском Re
 | 9 | В консоли DevTools: `location.href = "https://example.com"` | Переход отменён, адрес открылся в системном браузере (защита навигации включена по умолчанию). С `w.AllowAnyNavigation()` в `Host.cs` — сайт открывается в окне |
 | 10 | Удалить WebView2 Runtime (или проверить на машине без него) и открыть «Sample page» | В окне сообщение со ссылкой на установку вместо пустого окна |
 
-
 ## Dev-страница (Debug)
 
 Кнопка «Dev page» на панели «Dev» показывает в док-панели страницу `/dev`: живой лог плагина и форму запуска любой
@@ -124,3 +123,22 @@ Debug-сборка грузит dev-сервер: перед запуском Re
 | 7 | В поле `{ "afterSequence": "x" }`, «Run» | `bad_request` с сообщением десериализации; с пустым полем — `bad_request: … expects a payload` |
 | 8 | Открыть второй документ, снять флажок «Document header», «Run» `CountElementsByCategory`, переключиться на другой документ во время подсчёта | Команда дорабатывает по документу, на котором началась; с флажком — `document_changed` |
 | 9 | Release-сборка (`"ClientApp": { "UseDevServer": false }`, `npm run build`), открыть `#/dev` через DevTools-адрес или временную кнопку | Вкладка «Logs» пишет «The log is available in a Debug build only.», вкладка «Commands» работает |
+
+## MCP (прототип, решение 41)
+
+Debug-сборка: сервер включён. Порт — базовый из `Host.cs` (`AddMcp`) + (год − 2025).
+
+| # | Шаг | Ожидается |
+| --- | --- | --- |
+| 1 | Запустить Revit 2026 | В журнале `MCP server listens on http://localhost:<порт>/mcp`; появился `%LOCALAPPDATA%\Davydov.Revit.Addin\2026\mcp.json` с `url`, `token`, `claudeCode` |
+| 2 | Выполнить команду из `claudeCode` в терминале, затем `claude mcp list` | Сервер `davydov-revit-addin-2026` — `Connected` |
+| 3 | В Claude Code: «какие инструменты у revit?» | `GetActiveDocument`, `CountElementsByCategory`; ни `CheckActiveDocument`, ни `Host.*` |
+| 4 | Без открытого документа попросить вызвать `GetActiveDocument` | Ответ `null`; `CountElementsByCategory` — ошибка `no_document: …` |
+| 5 | Открыть большой проект, попросить посчитать элементы по категориям | Таблица категорий; Revit отвечает во время подсчёта; в журнале `Command CountElementsByCategory (mcp) succeeded` |
+| 6 | Перезапустить Revit, снова вызвать инструмент без изменения конфигурации клиента | Работает: токен в `mcp.json` тот же |
+| 7 | Запустить Revit 2025 рядом | Свой порт (на 1 меньше), свой `mcp.json` в `…\2025\` |
+| 8 | Запустить второй Revit 2026 | В журнале второго — предупреждение о занятом порте, плагин работает |
+| 9 | `curl -i -X POST http://localhost:<порт>/mcp` без заголовков | `401` |
+| 10 | Release-сборка без `Mcp:Enabled` | В журнале `MCP server is off`, порт не слушается |
+| 11 | «Dev page» → вкладка «MCP» | `listening` и адрес; команда для Claude Code и JSON с токеном, скрытым до последних 4 символов; «Copy» кладёт в буфер полный текст — его можно сразу выполнить в терминале (шаг 2); список инструментов |
+| 12 | Второй Revit той же версии → «Dev page» → «MCP» | `port busy` и подсказка; токена нет |

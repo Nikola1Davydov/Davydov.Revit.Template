@@ -2,7 +2,7 @@
 name: add-command
 description: >
   Add a pipeline command: the code that reads or changes the Revit model for a page or a ribbon button.
-  USE FOR: a new command class in Features/, reading or changing the active document, transactions, progress and cancellation of long work, errors the caller understands, calling a command from a page or a button.
+  USE FOR: a new command class in Features/, reading or changing the active document, transactions, progress and cancellation of long work, errors the caller understands, calling a command from a page, a button or an AI client (MCP).
   DO NOT USE FOR: the button itself (add-ribbon-button); the page and its window (add-page); middleware that applies to every command.
 ---
 
@@ -120,6 +120,21 @@ From a ribbon button — fire and forget, failures are shown to the user:
 ```csharp
 Host.GetService<ICommandSender>().Send<RenameFamilies>(new RenameFamiliesRequest(ids, "FAM_"));
 ```
+
+From an AI client (Claude Code, Cursor, VS Code) — mark the class with `[McpTool]` of `Davydov.Revit.Hosting.Mcp`:
+
+```csharp
+[McpTool(ReadOnly = true)]
+[Command(Description = "Returns the name and category of every family in the active document.")]
+public sealed class GetFamilies(ActiveDocument document) : ICommand<IReadOnlyList<FamilyItem>>
+```
+
+* Only marked commands are visible to AI clients. The tool name is the command name; the description is required —
+  the client picks tools by it, so say what the command does and what it returns.
+* The request type must be a record with properties: its JSON schema is the tool's input. `[McpTool(ReadOnly = true)]`
+  for a command that only reads, `Destructive = true` for one that deletes or overwrites.
+* A `CommandException` reaches the client as a tool error `code: message`; the call has no `Document` header, so the
+  document is the one active at the first access.
 
 ## Check
 

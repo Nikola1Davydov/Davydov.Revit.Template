@@ -32,6 +32,9 @@
         <!-- WebView2 for Davydov.Revit.Hosting.WebView; loads in the Launcher's AssemblyLoadContext like everything else -->
         <PackageVersion Include="Microsoft.Web.WebView2" Version="1.0.4258.31"/>
 
+        <!-- MCP server of Davydov.Revit.Hosting.Mcp: the Core package only, the ASP.NET Core one needs a framework Revit lacks -->
+        <PackageVersion Include="ModelContextProtocol.Core" Version="2.2.0"/>
+
         <!-- Tests: TUnit on Microsoft.Testing.Platform (global.json), as in Nice3point MultiProjectSolution -->
         <PackageVersion Include="TUnit" Version="1.73.19"/>
 

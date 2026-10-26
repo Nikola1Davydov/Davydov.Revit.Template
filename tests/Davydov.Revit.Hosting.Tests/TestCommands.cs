@@ -1,4 +1,5 @@
 using Davydov.Revit.Hosting.Commands;
+using Davydov.Revit.Hosting.Mcp;
 
 namespace Davydov.Revit.Hosting.Tests;
 
@@ -121,4 +122,72 @@ public sealed class TwoInterfaces : ICommand<int>, ICommand<string, int>
     public Task<int> ExecuteAsync(CommandContext context) => Task.FromResult(0);
 
     public Task<int> ExecuteAsync(string request, CommandContext context) => Task.FromResult(0);
+}
+
+// MCP tools: commands marked with [McpTool]
+
+[McpTool(ReadOnly = true)]
+[Command(Description = "Greets by name over MCP.")]
+public sealed class McpGreetCommand : ICommand<GreetRequest, string>
+{
+    public Task<string> ExecuteAsync(GreetRequest request, CommandContext context)
+    {
+        return Task.FromResult($"Hello, {request.Name} ({context.Source})");
+    }
+}
+
+public sealed record McpPoint(int X, int Y);
+
+[McpTool]
+[Command(Description = "Returns a point.")]
+public sealed class McpPointCommand : ICommand<McpPoint>
+{
+    public Task<McpPoint> ExecuteAsync(CommandContext context)
+    {
+        return Task.FromResult(new McpPoint(1, 2));
+    }
+}
+
+[McpTool]
+[Command(Description = "Always refuses.")]
+public sealed class McpRefuseCommand : ICommand<int>
+{
+    public Task<int> ExecuteAsync(CommandContext context)
+    {
+        throw new CommandException("refused", "Not over MCP.");
+    }
+}
+
+[McpTool]
+[Command(Description = "Reports half the work, then finishes.")]
+public sealed class McpProgressCommand : ICommand<Empty>
+{
+    public async Task<Empty> ExecuteAsync(CommandContext context)
+    {
+        context.Progress.Report(new ProgressInfo(0.5, "Half"));
+        // Progress notifications go out on their own; give this one time to arrive before the result
+        await Task.Delay(TimeSpan.FromMilliseconds(300), context.CancellationToken);
+        return Empty.Value;
+    }
+}
+
+// Broken on purpose: an MCP tool needs a description and an object request
+
+[McpTool]
+public sealed class McpUndescribedCommand : ICommand<int>
+{
+    public Task<int> ExecuteAsync(CommandContext context)
+    {
+        return Task.FromResult(0);
+    }
+}
+
+[McpTool]
+[Command(Description = "Takes a bare string.")]
+public sealed class McpScalarRequestCommand : ICommand<string, int>
+{
+    public Task<int> ExecuteAsync(string request, CommandContext context)
+    {
+        return Task.FromResult(request.Length);
+    }
 }
