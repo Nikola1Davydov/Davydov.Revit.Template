@@ -4,6 +4,9 @@
   color-scheme: light dark;
   font-family: "Segoe UI", system-ui, sans-serif;
   font-size: 14px;
+  /* Paint the page itself: a transparent page shows the host behind it — black in a Revit dock pane — under dark text */
+  background: Canvas;
+  color: CanvasText;
 }
 
 body {
