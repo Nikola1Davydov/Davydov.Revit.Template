@@ -81,7 +81,7 @@ Debug-сборка, для каждой версии Revit 2025, 2026, 2027:
 
 | # | Шаг | Ожидается |
 | --- | --- | --- |
-| 1 | Запустить Revit, открыть журнал | Строка `Registered 4 commands: CheckActiveDocument, CountElementsByCategory, GetActiveDocument, Host.GetCommands` |
+| 1 | Запустить Revit, открыть журнал | Строка `Registered 5 commands: CheckActiveDocument, CountElementsByCategory, GetActiveDocument, GetLogEntries, Host.GetCommands` (в Release — 3, без Debug-команд) |
 | 2 | Открыть проект, нажать «Active document» (панель Dev), ничего не трогать 5 с | Окно: название, ключ (путь файла или заголовок несохранённого), число элементов; в журнале — `Command CheckActiveDocument (ribbon) succeeded in ~5000 ms` |
 | 3 | Открыть два проекта; нажать «Active document» и сразу переключиться на другой проект | Окно ошибки «The active document has changed. Refresh the data and try again.»; в журнале — `refused: document_changed` |
 | 4 | Нажать «Active document» и сразу закрыть все документы | Окно ошибки «Open a document first.» (`no_document`) |
@@ -107,3 +107,20 @@ Debug-сборка грузит dev-сервер: перед запуском Re
 | 9 | В консоли DevTools: `location.href = "https://example.com"` | Переход отменён, адрес открылся в системном браузере (защита навигации включена по умолчанию). С `w.AllowAnyNavigation()` в `Host.cs` — сайт открывается в окне |
 | 10 | Удалить WebView2 Runtime (или проверить на машине без него) и открыть «Sample page» | В окне сообщение со ссылкой на установку вместо пустого окна |
 
+
+## Dev-страница (Debug)
+
+Кнопка «Dev page» на панели «Dev» показывает в док-панели страницу `/dev`: живой лог плагина и форму запуска любой
+команды. Панель одна, поэтому страница занимает место «Palette», пока не нажата «Palette».
+
+| # | Шаг | Ожидается |
+| --- | --- | --- |
+| 1 | Нажать «Dev page», вкладка «Logs» | В панели — записи с момента старта: `Host started in N ms`, `Registered 5 commands: …`, `Revit <год> initialized`; записи самого опроса (`Command GetLogEntries`) в списке нет, а в журнале и файле — есть |
+| 2 | Нажать «Status» | Через полсекунды в списке `Status requested: …`; «Follow» прокручивает к последней записи |
+| 3 | «Pause», нажать «Status», «Resume» | Пока пауза — ничего не приходит; после «Resume» — пропущенная запись появляется |
+| 4 | Выбрать `Warning+`, нажать «Active document» без документа | Кнопка неактивна; открыть документ, нажать «Active document» и сразу закрыть его — в списке `refused: no_document` или `document_changed` уровня `WRN` |
+| 5 | Вкладка «Commands», выбрать `CountElementsByCategory`, «Run» | Прогресс, затем JSON с категориями и `Succeeded in N ms`; «Cancel» посреди подсчёта — `aborted` |
+| 6 | Выбрать `GetLogEntries`, в поле `{ "afterSequence": 0 }`, «Run» | JSON со всеми записями буфера (не больше 1000) |
+| 7 | В поле `{ "afterSequence": "x" }`, «Run» | `bad_request` с сообщением десериализации; с пустым полем — `bad_request: … expects a payload` |
+| 8 | Открыть второй документ, снять флажок «Document header», «Run» `CountElementsByCategory`, переключиться на другой документ во время подсчёта | Команда дорабатывает по документу, на котором началась; с флажком — `document_changed` |
+| 9 | Release-сборка (`"ClientApp": { "UseDevServer": false }`, `npm run build`), открыть `#/dev` через DevTools-адрес или временную кнопку | Вкладка «Logs» пишет «The log is available in a Debug build only.», вкладка «Commands» работает |

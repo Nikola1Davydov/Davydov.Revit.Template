@@ -10,6 +10,7 @@ namespace Davydov.Revit.Addin.Launcher.Proxies;
 [Transaction(TransactionMode.Manual)] public sealed class StatusCommand : ProxyCommand;
 [Transaction(TransactionMode.Manual)] public sealed class ActiveDocumentCommand : ProxyCommand;
 [Transaction(TransactionMode.Manual)] public sealed class UserSettingsCommand : ProxyCommand;
+[Transaction(TransactionMode.Manual)] public sealed class DevPageCommand : ProxyCommand;
 
 public sealed class DocumentAvailability : ProxyAvailability;
 public sealed class ProjectAvailability : ProxyAvailability;
