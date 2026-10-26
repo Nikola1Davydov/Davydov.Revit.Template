@@ -26,7 +26,7 @@
 | --- | --- | --- |
 | 1 | Запустить `output\…-SingleUser.msi` | Дерево компонентов с Revit 2025, 2026, 2027; установка без прав администратора |
 | 2 | Открыть `%AppData%\Autodesk\Revit\Addins\2026` | `Davydov.Revit.Addin.Launcher.addin` и папка `Davydov.Revit.Addin.Launcher` с `ClientApp\dist` |
-| 3 | Запустить Revit 2026, нажать «Sample page» | Страница открывается из `dist` (Release, без dev-сервера) |
+| 3 | Запустить Revit 2026, открыть док-панель плагина («Вид» → «Интерфейс» → «Davydov.Revit.Addin») | Страница открывается из `dist` (Release, без dev-сервера) |
 | 4 | Собрать ещё раз (`pack`) и поставить новый MSI поверх | В «Программах и компонентах» одна запись, не две |
 | 5 | Удалить через «Программы и компоненты» | Папки и `.addin` в `Addins\<год>` удалены |
 | 6 | `…-MultiUser.msi` (от администратора) | 2025, 2026 — в `%ProgramData%\Autodesk\Revit\Addins`, 2027 — в `%ProgramFiles%\Autodesk\Revit\Addins` |
@@ -40,7 +40,7 @@
 | 1 | `dotnet new davydov-revit -n Acme.Revit.Tools --vendor Acme`, `git init`, коммит, `dotnet run -c Release --project build -- pack` | Сборка, `Acme.Revit.Tools-…-SingleUser.msi`, `…-MultiUser.msi`, `Acme.Revit.Tools.bundle.zip` |
 | 2 | Создать второй плагин (`-n Contoso.Revit.Tools`), собрать оба в `Debug.R26` | В `Addins\2026` два `.addin` и две папки Launcher |
 | 3 | Запустить Revit 2026 | Две вкладки на ленте, кнопки обоих работают; «Status» каждого — свой `Load context` (`Acme.Revit.Tools`, `Contoso.Revit.Tools`) |
-| 4 | «Sample page» в каждом | Свои окна; логи и `usersettings` — в своих папках `%LOCALAPPDATA%` и `%AppData%` |
+| 4 | «Status» в каждом, затем док-панель каждого | Свои окна и панели; логи и `usersettings` — в своих папках `%LOCALAPPDATA%` и `%AppData%` |
 | 5 | `dotnet new uninstall Davydov.Revit.Templates` | — |
 
 ## Фаза 1 — скелет
@@ -90,6 +90,10 @@ Debug-сборка, для каждой версии Revit 2025, 2026, 2027:
 
 ## Фаза 4 — WebView
 
+С решения 43 на ленте нет кнопок «Sample page» и «Palette». Для шагов с окном временно добавьте кнопку с
+`Host.GetService<IWindows>().Open("/")` (навык `add-ribbon-button`); док-панель с маршрутом `/dock` открывает
+«Вид» → «Интерфейс» или кнопка «Dev page» (Debug, маршрут `/dev`).
+
 Подготовка: `npm install` в `source/Davydov.Revit.Hosting.WebView/revit-bridge` и в `source/Davydov.Revit.Addin/ClientApp`.
 Debug-сборка грузит dev-сервер: перед запуском Revit — `npm run dev` в `ClientApp`. Для проверки Release-варианта —
 `npm run build` и в `appsettings.Development.json` `"ClientApp": { "UseDevServer": false }`.
@@ -110,7 +114,7 @@ Debug-сборка грузит dev-сервер: перед запуском Re
 ## Dev-страница (Debug)
 
 Кнопка «Dev page» на панели «Dev» показывает в док-панели страницу `/dev`: живой лог плагина и форму запуска любой
-команды. Панель одна, поэтому страница занимает место «Palette», пока не нажата «Palette».
+команды. Панель одна, поэтому страница занимает место маршрута `/dock` до перезапуска Revit.
 
 | # | Шаг | Ожидается |
 | --- | --- | --- |
