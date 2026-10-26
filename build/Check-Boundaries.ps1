@@ -6,7 +6,7 @@
 .DESCRIPTION
     - References: every project in source/ may reference only the projects and packages of its row in $Rules;
       a new project fails until it gets a row here.
-    - Davydov.Revit.Hosting and Davydov.Revit.Hosting.Mcp are headless (Headless in $Rules): no UseWPF /
+    - Davydov.Revit.Hosting, .Mcp and .Scripting are headless (Headless in $Rules): no UseWPF /
       UseWindowsForms, no System.Windows, no MessageBox.
     - Davydov.Revit.Addin: Features/ and Services/ use no System.Windows (UI goes through IUserNotifier and the
       frontend) and no ActiveUIDocument (the document goes through ActiveDocument). Exceptions:
@@ -43,6 +43,11 @@ $Rules = [ordered]@{
         Packages = $RevitApi + $Common + @('ModelContextProtocol.Core', 'Microsoft.Extensions.*')
         Headless = $true
     }
+    'Davydov.Revit.Hosting.Scripting' = @{
+        Projects = @('Davydov.Revit.Hosting', 'Davydov.Revit.Hosting.Mcp')
+        Packages = $RevitApi + $Common + @('Microsoft.CodeAnalysis.*', 'Microsoft.Extensions.*')
+        Headless = $true
+    }
     'Davydov.Revit.Addin.ServiceDefaults' = @{
         Projects = @('Davydov.Revit.Hosting')
         Packages = $RevitApi + $Common + @('Nice3point.Revit.Toolkit', 'Nice3point.Revit.Logging', 'Microsoft.Extensions.*', 'Serilog.*')
@@ -52,7 +57,7 @@ $Rules = [ordered]@{
         Packages = $RevitApi
     }
     'Davydov.Revit.Addin' = @{
-        Projects = @('Davydov.Revit.Addin.ServiceDefaults', 'Davydov.Revit.Hosting', 'Davydov.Revit.Hosting.WebView', 'Davydov.Revit.Hosting.Mcp')
+        Projects = @('Davydov.Revit.Addin.ServiceDefaults', 'Davydov.Revit.Hosting', 'Davydov.Revit.Hosting.WebView', 'Davydov.Revit.Hosting.Mcp', 'Davydov.Revit.Hosting.Scripting')
         Packages = $RevitApi + $Common + @('Nice3point.Revit.Toolkit', 'Nice3point.Revit.Extensions', 'Microsoft.Extensions.*')
     }
 }

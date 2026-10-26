@@ -28,6 +28,18 @@
         <ProjectReference Include="..\..\source\Davydov.Revit.Hosting\Davydov.Revit.Hosting.csproj"/>
         <ProjectReference Include="..\..\source\Davydov.Revit.Hosting.WebView\Davydov.Revit.Hosting.WebView.csproj"/>
         <ProjectReference Include="..\..\source\Davydov.Revit.Hosting.Mcp\Davydov.Revit.Hosting.Mcp.csproj"/>
+        <ProjectReference Include="..\..\source\Davydov.Revit.Hosting.Scripting\Davydov.Revit.Hosting.Scripting.csproj"/>
     </ItemGroup>
+
+    <!--
+        The script compiler needs the Revit API as metadata. In Revit it is loaded; here only its reference assemblies exist,
+        so they go next to the tests (revit-ref) and the tests pass them to the compiler.
+    -->
+    <Target Name="CopyRevitReferenceAssemblies" AfterTargets="ResolveAssemblyReferences">
+        <ItemGroup>
+            <RevitReferenceAssembly Include="@(ReferencePath)" Condition="'%(Filename)' == 'RevitAPI' Or '%(Filename)' == 'RevitAPIUI'"/>
+        </ItemGroup>
+        <Copy SourceFiles="@(RevitReferenceAssembly)" DestinationFolder="$(OutDir)revit-ref" SkipUnchangedFiles="true"/>
+    </Target>
 
 </Project>

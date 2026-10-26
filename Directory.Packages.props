@@ -35,6 +35,9 @@
         <!-- MCP server of Davydov.Revit.Hosting.Mcp: the Core package only, the ASP.NET Core one needs a framework Revit lacks -->
         <PackageVersion Include="ModelContextProtocol.Core" Version="2.2.0"/>
 
+        <!-- Roslyn of Davydov.Revit.Hosting.Scripting: 4.11 needs System.Collections.Immutable 8.0, which .NET 8 of Revit 2025 has -->
+        <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0"/>
+
         <!-- Tests: TUnit on Microsoft.Testing.Platform (global.json), as in Nice3point MultiProjectSolution -->
         <PackageVersion Include="TUnit" Version="1.73.19"/>
 

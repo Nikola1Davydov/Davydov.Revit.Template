@@ -12,11 +12,12 @@ How the add-in starts, where the code goes and why. The rules an agent must not 
 | `source/Davydov.Revit.Hosting` | Module: the command pipeline, `IRevitDispatcher`, Revit lifetime, user settings, notifications. No WPF. |
 | `source/Davydov.Revit.Hosting.WebView` | Module: WebView2 windows, the dock pane, the transport to the pipeline and `revit-bridge` for the pages. |
 | `source/Davydov.Revit.Hosting.Mcp` | Module: an MCP server inside Revit, the transport of AI clients to the pipeline. No WPF. |
+| `source/Davydov.Revit.Hosting.Scripting` | Module: the `ExecuteCode` command — C# compiled with Roslyn and run inside Revit. No WPF. |
 | `build/` | The build pipeline (ModularPipelines): boundary check, `ClientApp`, compile, `pack`. |
 | `install/` | The `.msi` builder (WixSharp). |
 
-The modules are the add-in's own code, not a dependency: change them as the add-in needs. `Davydov.Revit.Hosting` and
-`Davydov.Revit.Hosting.Mcp` stay headless, so the pipeline can run without the UI.
+The modules are the add-in's own code, not a dependency: change them as the add-in needs. `Davydov.Revit.Hosting`,
+`Davydov.Revit.Hosting.Mcp` and `Davydov.Revit.Hosting.Scripting` stay headless, so the pipeline can run without the UI.
 
 ## Startup and isolation
 
@@ -45,6 +46,7 @@ that the proxy exists.
 * `AddRevitCommands(...)` — the command registry, the middleware of the pipeline, `ICommandExecutor` and `ICommandSender`.
 * `AddWebView(application, ...)` — windows, the dock pane and the page source.
 * `AddMcp(application, basePort)` — the MCP server for AI clients.
+* `commands.AddScripting(builder)` inside `AddRevitCommands` — the `ExecuteCode` command, when scripting is on.
 
 Classes get their dependencies through the constructor. Only ribbon buttons, which Revit creates itself, resolve
 services with `Host.GetService<T>()`.
@@ -109,6 +111,18 @@ nothing else is visible to the client. A command failure is a tool result with `
   session-less revision of 2026 gets a server per request. The protocol itself is the SDK's (`ModelContextProtocol.Core`);
   its ASP.NET Core package does not fit — Revit has no ASP.NET Core.
 
+## Running C# (Scripting)
+
+`ExecuteCode` compiles a C# method body with Roslyn and runs it once on the Revit thread — the scratchpad of an AI client
+over MCP, and of the «Commands» tab of the Dev page (`{ "code": "return doc.Title;" }`).
+
+* The body sees `uiapp`, `uidoc`, `doc` and `cancellationToken` and may `return` a value; leading `using` directives are
+  lifted above the generated class. Errors come back as `compile_failed` or `script_failed`, with the line of the body.
+* It compiles on the thread pool against the assemblies the add-in runs with, runs and serializes the result on the Revit
+  thread, and unloads the script's assembly afterwards. The whole script is one Revit call: Revit waits until it returns.
+* Any code runs with the user's rights. The command exists only while scripting is on: in Debug by default, otherwise with
+  `Scripting:Enabled` — read at startup. Off, neither a page nor an AI client can reach it.
+
 ## Settings and logs
 
 Configuration layers, a later one overrides an earlier one:
@@ -135,7 +149,7 @@ The page polls `GetLogEntries`; the records of that polling are dropped from the
 `build/Check-Boundaries.ps1` runs on every pipeline run and fails it on:
 
 * a project or package reference that the table at the top of the script does not allow;
-* WPF in `Davydov.Revit.Hosting` or `Davydov.Revit.Hosting.Mcp`, or in `Features/` and `Services/` of the add-in;
+* WPF in `Davydov.Revit.Hosting`, `Davydov.Revit.Hosting.Mcp` or `Davydov.Revit.Hosting.Scripting`, or in `Features/` and `Services/` of the add-in;
 * `ActiveUIDocument` in `Features/` and `Services/`, outside `ActiveDocument.cs` and lines marked `// AllowActiveDocument:`;
 * a type of the add-in or the modules in the Launcher code.
 

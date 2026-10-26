@@ -162,12 +162,11 @@ public sealed class McpRefuseCommand : ICommand<int>
 [Command(Description = "Reports half the work, then finishes.")]
 public sealed class McpProgressCommand : ICommand<Empty>
 {
-    public async Task<Empty> ExecuteAsync(CommandContext context)
+    public Task<Empty> ExecuteAsync(CommandContext context)
     {
+        // Returns right after reporting: the server must still deliver the progress before the result
         context.Progress.Report(new ProgressInfo(0.5, "Half"));
-        // Progress notifications go out on their own; give this one time to arrive before the result
-        await Task.Delay(TimeSpan.FromMilliseconds(300), context.CancellationToken);
-        return Empty.Value;
+        return Task.FromResult(Empty.Value);
     }
 }
 

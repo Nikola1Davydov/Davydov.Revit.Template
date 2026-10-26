@@ -39,13 +39,20 @@ internal sealed partial class McpTools(
             ? default
             : JsonSerializer.SerializeToElement(parameters.Arguments ?? NoArguments, serializerOptions.Value);
 
+        var progress = parameters.ProgressToken is { } token ? new ProgressSink(request.Server, token, logger) : null;
         var commandRequest = new CommandRequest(entry.Command.Name, payload, CommandSources.Mcp)
         {
-            Progress = parameters.ProgressToken is { } token ? new ProgressSink(request.Server, token, logger) : null,
+            Progress = progress,
             CancellationToken = cancellationToken
         };
 
         var result = await executor.ExecuteAsync(commandRequest).ConfigureAwait(false);
+        if (progress is not null)
+        {
+            // The last progress must reach the client before the result: after the result it belongs to no call
+            await progress.FlushAsync().ConfigureAwait(false);
+        }
+
         if (result.Error is { } error)
         {
             return new CallToolResult
@@ -70,11 +77,29 @@ internal sealed partial class McpTools(
     /// <summary>
     ///     Progress of one tool call as MCP progress notifications. The command reports a fraction, so <c>total</c> is 1.
     /// </summary>
+    /// <remarks>
+    ///     <see cref="Report" /> must not block the command, which may be on the Revit thread; the notifications are chained,
+    ///     so they go out in the order reported, and <see cref="FlushAsync" /> waits for the last one.
+    /// </remarks>
     private sealed class ProgressSink(McpServer server, ProgressToken token, ILogger logger) : IProgress<ProgressInfo>
     {
+        private readonly Lock _gate = new();
+        private Task _last = Task.CompletedTask;
+
         public void Report(ProgressInfo value)
         {
-            _ = NotifyAsync(value);
+            lock (_gate)
+            {
+                _last = _last.ContinueWith(_ => NotifyAsync(value), TaskScheduler.Default).Unwrap();
+            }
+        }
+
+        public Task FlushAsync()
+        {
+            lock (_gate)
+            {
+                return _last;
+            }
         }
 
         private async Task NotifyAsync(ProgressInfo value)
