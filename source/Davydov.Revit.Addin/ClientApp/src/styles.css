@@ -100,18 +100,43 @@ td {
   overflow: auto;
 }
 
+/* Time, level and category on the first line; the message below them takes the whole width of the narrow pane */
 .log-list li {
   display: grid;
-  grid-template-columns: auto auto auto 1fr;
-  gap: 8px;
-  padding: 1px 0;
-  border-bottom: 1px solid color-mix(in srgb, currentColor 8%, transparent);
+  grid-template-columns: auto auto 1fr;
+  column-gap: 8px;
+  row-gap: 2px;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
 }
 
-.log-list .time,
-.log-list .category {
-  opacity: 0.6;
+.log-list .time {
+  font-weight: 600;
   white-space: nowrap;
+}
+
+.log-list .level {
+  padding: 0 5px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background: #3b6fb6;
+}
+
+.log-list .category {
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+.log-list .category {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.log-list .message {
+  grid-column: 1 / -1;
 }
 
 .log-list .message,
@@ -127,18 +152,23 @@ td {
 }
 
 .log-list .level-warning .level {
-  color: #b7791f;
+  color: #1a1a1a;
+  background: #e0a526;
 }
 
 .log-list .level-error .level,
 .log-list .level-critical .level {
-  color: #c42a2a;
-  font-weight: 600;
+  background: #c42a2a;
 }
 
-.log-list .level-trace,
-.log-list .level-debug {
-  opacity: 0.6;
+.log-list .level-trace .level,
+.log-list .level-debug .level {
+  background: #7a7a7a;
+}
+
+.log-list .level-trace .message,
+.log-list .level-debug .message {
+  opacity: 0.7;
 }
 
 .commands textarea,
