@@ -110,18 +110,29 @@ public sealed class McpServerTests
     }
 
     [Test]
-    [MethodDataSource(nameof(ProtocolVersions))]
-    public async Task CallTool_ReportsProgress(string protocolVersion)
+    public async Task CallTool_SendsTheProgressBeforeTheResult()
     {
+        // Over raw HTTP, not the SDK client: that client handles every incoming message as a task of its own, so the
+        // progress may reach IProgress after CallToolAsync returned — and get dropped. The server's part is the order of
+        // the events on the wire.
         await using var server = await McpTestServer.StartAsync(typeof(McpProgressCommand));
-        await using var client = await server.ConnectAsync(protocolVersion);
-        var progress = new ProgressRecorder();
+        using var http = new HttpClient();
+        http.DefaultRequestHeaders.Add("Authorization", $"Bearer {server.Token}");
+        http.DefaultRequestHeaders.Add("Accept", "application/json, text/event-stream");
 
-        await client.CallToolAsync("McpProgress", progress: progress);
+        using var initialize = await http.PostAsync(server.Url, InitializeBody());
+        http.DefaultRequestHeaders.Add("Mcp-Session-Id", initialize.Headers.GetValues("Mcp-Session-Id").Single());
+        http.DefaultRequestHeaders.Add("MCP-Protocol-Version", "2025-06-18");
+        using var initialized = await http.PostAsync(server.Url, Json("""{"jsonrpc":"2.0","method":"notifications/initialized"}"""));
 
-        // The server sends the progress before the result; the client may still hand it to IProgress a moment later
-        await progress.WaitForAsync(0.5f, TimeSpan.FromSeconds(2));
-        await Assert.That(progress.Values.Select(value => value.Progress)).Contains(0.5f);
+        using var call = await http.PostAsync(server.Url, Json(
+            """{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"McpProgress","arguments":{},"_meta":{"progressToken":"p1"}}}"""));
+        var events = await call.Content.ReadAsStringAsync();
+
+        var progress = events.IndexOf("notifications/progress", StringComparison.Ordinal);
+        var result = events.IndexOf("\"result\"", StringComparison.Ordinal);
+        await Assert.That(progress).IsGreaterThanOrEqualTo(0);
+        await Assert.That(progress).IsLessThan(result);
     }
 
     [Test]
@@ -227,42 +238,12 @@ public sealed class McpServerTests
 
     private static StringContent InitializeBody()
     {
-        const string body = """{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"test","version":"1"}}}""";
-        var content = new StringContent(body, Encoding.UTF8, "application/json");
-        return content;
+        return Json("""{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"test","version":"1"}}}""");
     }
 
-    private sealed class ProgressRecorder : IProgress<ProgressNotificationValue>
+    private static StringContent Json(string body)
     {
-        private readonly List<ProgressNotificationValue> _values = [];
-
-        public IReadOnlyList<ProgressNotificationValue> Values
-        {
-            get
-            {
-                lock (_values)
-                {
-                    return _values.ToList();
-                }
-            }
-        }
-
-        public void Report(ProgressNotificationValue value)
-        {
-            lock (_values)
-            {
-                _values.Add(value);
-            }
-        }
-
-        public async Task WaitForAsync(float progress, TimeSpan timeout)
-        {
-            var deadline = DateTime.UtcNow + timeout;
-            while (!Values.Any(value => value.Progress.Equals(progress)) && DateTime.UtcNow < deadline)
-            {
-                await Task.Delay(20);
-            }
-        }
+        return new StringContent(body, Encoding.UTF8, "application/json");
     }
 }
 
