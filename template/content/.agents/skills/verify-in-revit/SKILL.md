@@ -29,9 +29,9 @@ dotnet build Davydov.Revit.Addin.slnx -c Debug.R26
 ## Step 2: Connect
 
 `%LOCALAPPDATA%\Davydov.Revit.Addin\<year>\mcp.json` has the address, the token and the command that adds the server to
-Claude Code (`claudeCode`); the token survives Revit restarts. The tool list of a client is read when its session starts:
-after adding a command, a new session sees it. Without the file or with `ECONNREFUSED`, Revit is not running, or the
-server is off (`Mcp:Enabled`), or the port is busy — the log says which.
+Claude Code (`claudeCode`); the token survives Revit restarts. A client reads the tool list when it connects: after a
+Revit restart, reconnect the server (`/mcp` in Claude Code) — that also brings in new commands. Without the file or with
+`ECONNREFUSED`, Revit is not running, or the server is off (`Mcp:Enabled`), or the port is busy — the log says which.
 
 ## Step 3: Check
 
