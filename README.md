@@ -83,8 +83,9 @@ dotnet run -c Release --project build -- pack    # .msi installers and the bundl
 * Rules for people and AI agents working on the template — [AGENTS.md](AGENTS.md), decisions and their history —
   [docs/PLAN.md](docs/PLAN.md), checks in a running Revit — [docs/manual-tests.md](docs/manual-tests.md) (in Russian).
 * `Template.yml` creates a project from the template on every pull request, checks it for leftovers and builds it.
-* The package goes to nuget.org from `PublishTemplate.yml` on a tag `v<version>` (Trusted Publishing, no stored key); a
-  manual run with dry run checks everything and publishes nothing. A version on nuget.org cannot be deleted.
+* The package goes to nuget.org from `PublishTemplate.yml` on a tag `v<version>` — pushed, or created with a release in the
+  GitHub UI, which then gets the `.nupkg` attached (Trusted Publishing, no stored key); a manual run with dry run checks
+  everything and publishes nothing. A version on nuget.org cannot be deleted.
 * The wiki is edited in `wiki/` through pull requests; `Wiki.yml` copies it to the GitHub wiki on every push to `main`.
 * The template follows **Nice3point.Revit.Templates 6.2.3** (`revit-addin-sln` with installer, bundle and GitHub
   Actions); our differences are in PLAN.md (phase 5) and the comments of `build/`.
