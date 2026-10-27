@@ -49,7 +49,7 @@ jobs:
           # The modules and every other name follow the add-in, and the vendor is Acme: no «Davydov» is left at all
           # (case-sensitive — the template short name davydov-revit may appear in the README)
           $leftovers = @(@($leftovers) + @(Get-ChildItem -Recurse -File | Select-String -CaseSensitive -Pattern 'Davydov') | Where-Object { $_ })
-          $extra = @('tests', 'docs', 'template', 'LICENSE', 'build/RepositoryModules.cs', 'build/Modules/TemplateSolutionModule.cs', '.github/workflows/Template.yml', '.github/workflows/PublishTemplate.yml' | Where-Object { Test-Path $_ })
+          $extra = @('tests', 'docs', 'wiki', 'template', 'LICENSE', 'build/RepositoryModules.cs', 'build/Modules/TemplateSolutionModule.cs', '.github/workflows/Template.yml', '.github/workflows/PublishTemplate.yml', '.github/workflows/Wiki.yml' | Where-Object { Test-Path $_ })
           # The agent files of the add-in, not the ones of this repository (those are in Russian)
           $missing = @('AGENTS.md', 'CLAUDE.md', 'ARCHITECTURE.md', '.agents/skills/add-ribbon-button/SKILL.md', '.agents/skills/add-command/SKILL.md', '.agents/skills/add-page/SKILL.md', '.agents/skills/verify-in-revit/SKILL.md' | Where-Object { -not (Test-Path $_) })
           # dotnet new keeps the .slnx; the classic .sln is only for Visual Studio (--solution-format auto)

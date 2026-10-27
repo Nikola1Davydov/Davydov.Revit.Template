@@ -201,6 +201,7 @@
             "template/**",
             "tests/**",
             "docs/**",
+            "wiki/**",
             "build/Modules/Test*.cs",
             "build/RepositoryModules.cs",
             "build/Modules/TemplateSolutionModule.cs",
@@ -217,6 +218,7 @@
             "README.md",
             ".github/workflows/Template.yml",
             ".github/workflows/PublishTemplate.yml",
+            ".github/workflows/Wiki.yml",
             "AGENTS.md",
             "CLAUDE.md"
           ]

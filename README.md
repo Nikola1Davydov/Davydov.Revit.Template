@@ -1,115 +1,94 @@
 # Davydov.Revit.Template
 
-A `dotnet new` template for Revit 2025–2027 add-ins with a WebView2 UI. It is built on the structure and tools of
-[Nice3point Revit Templates](https://github.com/Nice3point/RevitTemplates) (MIT): Revit SDK, Toolkit, Extensions,
-`Host` + `ServiceDefaults`, ModularPipelines, WixSharp. On top of them come our own modules, carried over from
-AnalyseTool. Design and decisions — [docs/PLAN.md](docs/PLAN.md) (in Russian).
+[![NuGet](https://img.shields.io/nuget/vpre/Davydov.Revit.Templates)](https://www.nuget.org/packages/Davydov.Revit.Templates)
+[![Compile](https://github.com/Nikola1Davydov/Davydov.Revit.Template/actions/workflows/Compile.yml/badge.svg)](https://github.com/Nikola1Davydov/Davydov.Revit.Template/actions/workflows/Compile.yml)
 
-`Davydov.Revit.Addin` is the placeholder name: a project created from the template gets the name of the new add-in instead.
-
-## Structure
-
-| Project | What it is |
-| --- | --- |
-| `source/Davydov.Revit.Addin.Launcher` | the only assembly Revit loads: the `.addin`, its own `AssemblyLoadContext`, the proxies of the ribbon buttons |
-| `source/Davydov.Revit.Addin` | the add-in: `Application`, `Host`, buttons (`Commands/`), commands (`Features/`), services (`Services/`), the React app (`ClientApp/`), plumbing (`Infrastructure/`: the ribbon link to the Launcher, Debug diagnostics) |
-| `source/Davydov.Revit.Addin.ServiceDefaults` | logging (Revit journal and a file log), configuration layers, JSON, DI validation |
-| `source/Davydov.Revit.Hosting` | module: the command pipeline, `IRevitDispatcher`, Revit lifetime, settings |
-| `source/Davydov.Revit.Hosting.WebView` | module: WebView2 windows and the dock pane, the transport to the pipeline, `revit-bridge` |
-| `source/Davydov.Revit.Hosting.Mcp` | module: an MCP server inside Revit on `HttpListener`; AI clients call the commands marked with `[McpTool]` |
-| `source/Davydov.Revit.Hosting.Scripting` | module: `ExecuteCode` — C# compiled with Roslyn and run inside Revit (on in Debug) |
-| `source/Davydov.Revit.Hosting.Visualization` | module: geometry drawn over the views with DirectContext3D (`ShowGeometry`) |
-| `build/` | the build pipeline (ModularPipelines) |
-| `install/` | the `.msi` builder (WixSharp) |
-| `tests/` | tests of this repository only, not part of the template |
-
-## Build
-
-.NET SDK 10 and Node.js 24. Configurations — `Debug.R25` … `Release.R27`:
+A `dotnet new` template for **Revit 2025–2027** add-ins: an isolated add-in with a command pipeline, a React UI in
+WebView2 and an MCP server, so AI agents can work with the running Revit. Built on
+[Nice3point Revit Templates](https://github.com/Nice3point/RevitTemplates) (MIT).
 
 ```
-dotnet build Davydov.Revit.Addin.slnx -c Debug.R26
-```
-
-A Debug build deploys the add-in to `%AppData%\Autodesk\Revit\Addins\<year>\`; a Release build only publishes to
-`source/Davydov.Revit.Addin.Launcher/bin/Release.R2x/publish/`.
-
-If the build fails with «workload set … has missing manifests», the .NET SDK installation is broken, not the project:
-run `dotnet workload repair`, or build with the environment variable `MSBuildEnableWorkloadResolver=false`.
-
-The whole build is the ModularPipelines pipeline in `build/`, as in Nice3point: `ClientApp` and every `Release.R2x`:
-
-```
-dotnet run -c Release --project build
-```
-
-With the tests — `Davydov.Revit.Hosting.Tests`, Vitest in `revit-bridge` and the tests inside Revit (Revit must be
-closed: the tests start it themselves):
-
-```
-dotnet run -c Release --project build -- test
-```
-
-CI (`.github/workflows/Compile.yml`, on `push` to `main` and on pull requests) runs the same with `test`, but without the
-tests inside Revit.
-
-Every pipeline run checks the project boundaries (`build/Check-Boundaries.ps1`): who may reference whom, no WPF in
-`Davydov.Revit.Hosting`, no `ActiveUIDocument` in `Features/` and `Services/` of the add-in, no add-in types in the
-Launcher. Alone: `pwsh build/Check-Boundaries.ps1`.
-
-Installers and the Autodesk App Store package, in `output/`:
-
-```
-dotnet run -c Release --project build -- pack
-```
-
-`…-SingleUser.msi` installs the add-in for the current user, `…-MultiUser.msi` for everyone (administrator rights),
-`<product>.bundle.zip` is for the Autodesk App Store. The build starts by cleaning every `bin/` and `obj/`. The first run
-installs WiX 7 and accepts its EULA (Open Source Maintenance Fee) with `wix eula accept wix7`. Product name,
-UpgradeCode and vendor — in `build/appsettings.json`.
-
-## Template
-
-This repository is the `dotnet new davydov-revit` template itself: `.template.config/template.json` and the package
-project `template/Davydov.Revit.Templates.csproj`. A new project gets no tests, `docs/`, `template/`, `LICENSE`,
-`Template.yml`, and none of this repository's `README.md`, `AGENTS.md` and `CLAUDE.md`: it gets its own from
-`template/content/`, with `ARCHITECTURE.md` and the agent skills in `.agents/skills/`. The `Davydov.Revit.Addin` names
-and the GUIDs are replaced. Locally:
-
-```
-dotnet pack template/Davydov.Revit.Templates.csproj -o artifacts
-dotnet new install artifacts/Davydov.Revit.Templates.0.1.0.nupkg
+dotnet new install Davydov.Revit.Templates::0.1.0-preview.1
 dotnet new davydov-revit -n Acme.Revit.Tools --vendor Acme
 ```
 
-`.github/workflows/Template.yml` creates a project from the template on every pull request, checks it and builds it.
+**Documentation — [the wiki](https://github.com/Nikola1Davydov/Davydov.Revit.Template/wiki):** getting started,
+commands, pages, ribbon buttons, AI and MCP, settings, build and release, troubleshooting.
 
-The «New project» dialog of Visual Studio replaces the `.slnx` of a solution template with a solution of its own (no
-folders, only `Debug`/`Release`). So a project created there gets a classic `.sln` instead
-(`template/content/Davydov.Revit.Addin.sln`, generated from the `.slnx` by the pipeline; CI fails if it is out of date),
-while `dotnet new` keeps the `.slnx`. `--solution-format slnx|sln` chooses explicitly.
+## What you get
 
-### Releasing the template
+* **Isolation.** Revit loads only a small Launcher; the add-in and every dependency load into their own
+  `AssemblyLoadContext`, so another add-in with other versions of Microsoft.Extensions.*, Serilog or WebView2 cannot
+  break yours.
+* **A command pipeline, like ASP.NET Core.** A command is a class in `Features/` with a request and a response; middleware
+  logs it, fixes the active document for the whole call, reports progress and handles cancellation. Pages, ribbon
+  buttons and AI clients call the same commands.
+* **A React UI.** Vite, React and TanStack Query in WebView2 windows and a dock pane; hot reload from the Vite dev server
+  in Debug, mocks for working in a normal browser.
+* **AI inside Revit.** An MCP server in the add-in: Claude Code, Cursor or VS Code call the commands you mark with
+  `[McpTool]`. Built-in tools let an agent see the active view, inspect elements, select and highlight them, read the log
+  and — in Debug — run C# against the Revit API of the running version.
+* **For agents working on your code.** `AGENTS.md`, `ARCHITECTURE.md` and skills (`add-command`, `add-page`,
+  `add-ribbon-button`, `verify-in-revit`) in every created project; a boundary check fails the build when the
+  architecture rules are broken.
+* **Build and ship.** A ModularPipelines build for every Revit version, `.msi` installers (WixSharp), an Autodesk App
+  Store bundle and GitHub Actions CI.
 
-The package `Davydov.Revit.Templates` goes to [nuget.org](https://www.nuget.org/packages/Davydov.Revit.Templates)
-through `.github/workflows/PublishTemplate.yml`, with nuget.org Trusted Publishing: no API key is stored, nuget.org
-trusts that workflow file in the GitHub environment `nuget`.
+## Quick start
 
-* A tag `v<version>` on `main` (`git tag v0.1.0-preview.1`, `git push origin v0.1.0-preview.1`) runs the checks of
-  `Template.yml`, packs the template with that version, pushes it to nuget.org and creates a GitHub release with the
-  `.nupkg`; a version with `-` is a prerelease.
-* A manual run (Actions → Publish template → Run workflow) takes the version and a **dry run** switch, on by default: it
-  checks, packs and logs in to nuget.org, but publishes nothing.
+You need the .NET SDK 10, Node.js 24 and Revit 2025, 2026 or 2027.
 
-A version on nuget.org cannot be deleted, only unlisted: try a new setup with a dry run or a prerelease first.
+```
+dotnet new install Davydov.Revit.Templates::0.1.0-preview.1
+dotnet new davydov-revit -n Acme.Revit.Tools --vendor Acme
+cd Acme.Revit.Tools/source/Acme.Revit.Tools/ClientApp
+npm install
+npm run dev
+```
 
-The template is aligned with **Nice3point.Revit.Templates 6.2.3** (the `revit-addin-sln` template with every option:
-installer, bundle, GitHub Actions): `build/`, `install/`, `.github/workflows/Compile.yml`, `global.json`. To carry over
-their updates: `dotnet new install Nice3point.Revit.Templates::<version>`, unpack the package from
-`%USERPROFILE%\.templateengine\packages`, compare `content/Nice3point.Revit.AddIn.Solution` with this repository, then
-update the version number here. Our differences from their template are listed in PLAN.md (phase 5) and in the comments
-of the `build/` modules.
+In a second terminal, from the project folder, build for your Revit and start it:
 
-Rules for working on the template, for people and AI agents — [AGENTS.md](AGENTS.md) (in Russian).
+```
+dotnet build Acme.Revit.Tools.slnx -c Debug.R26
+```
 
-Checks in a running Revit — [docs/manual-tests.md](docs/manual-tests.md) (in Russian).
+The Debug build deploys the add-in to `%AppData%\Autodesk\Revit\Addins\2026\`; Revit shows its ribbon tab, and the pages
+come from the dev server with hot reload. Next steps — [Getting started](https://github.com/Nikola1Davydov/Davydov.Revit.Template/wiki/Getting-Started).
+
+> The published `0.1.0-preview.1` predates the MCP server, scripting, geometry overlay and element inspection. Until the
+> next preview, build the template from this repository: `dotnet pack template/Davydov.Revit.Templates.csproj -o artifacts`,
+> then `dotnet new install artifacts/Davydov.Revit.Templates.0.1.0.nupkg`.
+
+## Template options
+
+| Option | Meaning |
+| --- | --- |
+| `-n <Name>` | The add-in name: projects, modules, namespaces, folders and the installer take it |
+| `--vendor <Name>` | The vendor of the `.addin`, the installer and the Autodesk bundle |
+| `--solution-format auto\|slnx\|sln` | `auto`: a classic `.sln` in Visual Studio's «New project» dialog, `.slnx` elsewhere |
+
+Every project gets its own add-in id, dock pane id, installer upgrade code and MCP port.
+
+## Working on the template
+
+This repository is both the template and a working solution: the placeholder add-in `Davydov.Revit.Addin` builds,
+passes its tests and CI. A project created from the template gets its own `README.md`, `AGENTS.md`, `ARCHITECTURE.md`
+and skills from `template/content/`; tests, `docs/`, `wiki/` and the template's own workflows stay here.
+
+```
+dotnet run -c Release --project build -- test    # boundaries, ClientApp, R25–R27, tests; Revit tests only locally, Revit closed
+dotnet run -c Release --project build -- pack    # .msi installers and the bundle in output/
+```
+
+* Rules for people and AI agents working on the template — [AGENTS.md](AGENTS.md), decisions and their history —
+  [docs/PLAN.md](docs/PLAN.md), checks in a running Revit — [docs/manual-tests.md](docs/manual-tests.md) (in Russian).
+* `Template.yml` creates a project from the template on every pull request, checks it for leftovers and builds it.
+* The package goes to nuget.org from `PublishTemplate.yml` on a tag `v<version>` (Trusted Publishing, no stored key); a
+  manual run with dry run checks everything and publishes nothing. A version on nuget.org cannot be deleted.
+* The wiki is edited in `wiki/` through pull requests; `Wiki.yml` copies it to the GitHub wiki on every push to `main`.
+* The template follows **Nice3point.Revit.Templates 6.2.3** (`revit-addin-sln` with installer, bundle and GitHub
+  Actions); our differences are in PLAN.md (phase 5) and the comments of `build/`.
+
+## License
+
+[MIT](LICENSE).

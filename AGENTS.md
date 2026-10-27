@@ -14,7 +14,7 @@
 
 | Что | Как |
 | --- | --- |
-| `tests/`, `docs/`, `template/`, `LICENSE`, `AGENTS.md`, `CLAUDE.md`, `README.md`, `.github/workflows/Template.yml` и `PublishTemplate.yml`, `build/RepositoryModules.cs`, `build/Modules/Test*` | исключения в `sources` файла `.template.config/template.json` |
+| `tests/`, `docs/`, `wiki/`, `template/`, `LICENSE`, `AGENTS.md`, `CLAUDE.md`, `README.md`, `.github/workflows/Template.yml`, `PublishTemplate.yml` и `Wiki.yml`, `build/RepositoryModules.cs`, `build/Modules/Test*` | исключения в `sources` файла `.template.config/template.json` |
 | папки `Docs`, `Tests` и пакет шаблона в `.slnx` | блоки `<!--#if (false)-->` … `<!--#endif-->` |
 | тестовые модули пайплайна | partial-метод `AddRepositoryModules` в `build/Program.cs`, реализация — в исключённом `build/RepositoryModules.cs`; без неё вызов исчезает |
 | `-- test` в `Compile.yml` | символ шаблона `pipelineRun` заменяет строку |
@@ -53,6 +53,9 @@ Visual Studio (`HostIdentifier == "vs"`), `.slnx` везде ещё; `slnx` и `
 * Файлы для автора плагина (`template/content/`, комментарии и сообщения в коде) и README репозитория — на
   английском. Рабочие документы репозитория (PLAN.md, manual-tests.md, этот файл) — на русском.
 * Имена классов, методов и файлов в документах и навыках сверяются с кодом.
+* Вики для авторов плагинов — в `wiki/` (английский, примеры на `Acme.Revit.Tools`), правится через PR вместе с кодом;
+  `Wiki.yml` копирует её в GitHub Wiki при пуше в `main`, правки прямо в GitHub Wiki затираются. Изменилось поведение,
+  которое описывает вики, — страница меняется в том же PR.
 * Решение записывается в раздел «Решения» PLAN.md; заменённое — зачёркивается со ссылкой на новое.
 
 ## Проверки
