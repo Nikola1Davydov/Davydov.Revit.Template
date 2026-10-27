@@ -156,11 +156,15 @@ internal static class CommandScanner
         where TCommand : ICommand<TRequest, TResponse>
     {
         var payload = context.RawPayload;
-        var request = payload.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null
-            ? default
-            : payload.Deserialize<TRequest>(serializerOptions);
+        var missing = payload.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null;
 
-        if (request is null)
+        // No payload: the defaults when every input is optional; otherwise the caller forgot it — also for a struct,
+        // which would silently get zeros
+        var request = !missing ? payload.Deserialize<TRequest>(serializerOptions)
+            : EmptyPayload<TRequest>.Allowed ? JsonSerializer.Deserialize<TRequest>("{}", serializerOptions)
+            : default;
+
+        if ((missing && !EmptyPayload<TRequest>.Allowed) || request is null)
         {
             throw new CommandException(CommandErrorCodes.BadRequest, $"The command '{context.CommandName}' expects a payload of type {typeof(TRequest).Name}.");
         }
@@ -172,5 +176,24 @@ internal static class CommandScanner
     private static async Task<object?> Box<T>(Task<T> task)
     {
         return await task.ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     Whether a request type may come without a payload: some public constructor takes only optional parameters — a
+    ///     record whose every input has a default, a class with a parameterless constructor, a struct without one of its own.
+    /// </summary>
+    internal static bool AllowsEmptyPayload(Type requestType)
+    {
+        var constructors = requestType.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
+
+        // A struct's implicit parameterless constructor is not listed: without declared ones it is the only one
+        return (requestType.IsValueType && constructors.Length == 0)
+               || constructors.Any(constructor => constructor.GetParameters().All(parameter => parameter.HasDefaultValue));
+    }
+
+    /// <summary>The answer of <see cref="AllowsEmptyPayload" />, computed once per request type.</summary>
+    private static class EmptyPayload<TRequest>
+    {
+        public static readonly bool Allowed = AllowsEmptyPayload(typeof(TRequest));
     }
 }

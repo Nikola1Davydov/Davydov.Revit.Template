@@ -51,6 +51,37 @@ public sealed class CommandPipelineTests
     }
 
     [Test]
+    public async Task Execute_MissingPayload_OptionalInputs_RunsWithTheDefaults()
+    {
+        using var host = TestHost.Build(commands => commands.FromTypes(typeof(PageCommand)));
+
+        var result = await host.ExecuteAsync("Page");
+
+        await Assert.That(result.Value).IsEqualTo("10:none");
+    }
+
+    [Test]
+    public async Task Execute_MissingPayload_StructWithARequiredInput_ReturnsBadRequest()
+    {
+        using var host = TestHost.Build(commands => commands.FromTypes(typeof(OffsetCommand)));
+
+        var result = await host.ExecuteAsync("Offset");
+
+        await Assert.That(result.Error?.Code).IsEqualTo(CommandErrorCodes.BadRequest);
+    }
+
+    [Test]
+    [Arguments(typeof(PageRequest), true)]
+    [Arguments(typeof(GreetRequest), false)]
+    [Arguments(typeof(OffsetRequest), false)]
+    [Arguments(typeof(PlainSettings), true)]
+    [Arguments(typeof(object), true)]
+    public async Task AllowsEmptyPayload_FollowsTheConstructors(Type requestType, bool allowed)
+    {
+        await Assert.That(CommandScanner.AllowsEmptyPayload(requestType)).IsEqualTo(allowed);
+    }
+
+    [Test]
     public async Task Execute_PayloadOfWrongShape_ReturnsBadRequest()
     {
         using var host = TestHost.Build(commands => commands.FromTypes(typeof(GreetCommand)));

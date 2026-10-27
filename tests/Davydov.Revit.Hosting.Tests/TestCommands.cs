@@ -200,3 +200,30 @@ public sealed class McpPictureCommand : ICommand<McpImage>
         return Task.FromResult(new McpImage([1, 2, 3], "image/png", "Three bytes."));
     }
 }
+
+// Payload rules: a request with only optional inputs may come without a payload; a struct with a required one may not
+
+public sealed record PageRequest(int Size = 10, string? Filter = null);
+
+public sealed class PageCommand : ICommand<PageRequest, string>
+{
+    public Task<string> ExecuteAsync(PageRequest request, CommandContext context)
+    {
+        return Task.FromResult($"{request.Size}:{request.Filter ?? "none"}");
+    }
+}
+
+public readonly record struct OffsetRequest(int Value);
+
+public sealed class OffsetCommand : ICommand<OffsetRequest, int>
+{
+    public Task<int> ExecuteAsync(OffsetRequest request, CommandContext context)
+    {
+        return Task.FromResult(request.Value);
+    }
+}
+
+public struct PlainSettings
+{
+    public int Level { get; set; }
+}

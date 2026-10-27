@@ -26,6 +26,10 @@ public interface IUserSettings
     /// <summary>
     ///     Reads the <paramref name="section" /> as <typeparamref name="T" />, applies <paramref name="update" /> and writes it back.
     /// </summary>
+    /// <remarks>
+    ///     The whole section is written, with the values from every layer below it. After the first write <c>appsettings.json</c>
+    ///     no longer changes this section for this user: a new default in a later release reaches only users who never saved it.
+    /// </remarks>
     /// <param name="section">The configuration section, nested sections separated by <c>:</c>.</param>
     /// <param name="update">Changes the current values.</param>
     /// <param name="cancellationToken">Cancels waiting for another write to finish.</param>
