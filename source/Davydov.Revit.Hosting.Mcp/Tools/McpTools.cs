@@ -62,6 +62,16 @@ internal sealed partial class McpTools(
             };
         }
 
+        if (result.Value is McpImage image)
+        {
+            return new CallToolResult
+            {
+                Content = image.Caption is null
+                    ? [ImageContentBlock.FromBytes(image.Data, image.MimeType)]
+                    : [ImageContentBlock.FromBytes(image.Data, image.MimeType), new TextContentBlock { Text = image.Caption }]
+            };
+        }
+
         var value = JsonSerializer.SerializeToElement(result.Value, result.Value?.GetType() ?? typeof(object), serializerOptions.Value);
         return new CallToolResult
         {

@@ -88,6 +88,21 @@ public sealed class McpServerTests
 
     [Test]
     [MethodDataSource(nameof(ProtocolVersions))]
+    public async Task CallTool_ImageResult_IsAnImageWithItsCaption(string protocolVersion)
+    {
+        await using var server = await McpTestServer.StartAsync(typeof(McpPictureCommand));
+        await using var client = await server.ConnectAsync(protocolVersion);
+
+        var result = await client.CallToolAsync("McpPicture");
+
+        var image = result.Content.OfType<ImageContentBlock>().Single();
+        await Assert.That(image.MimeType).IsEqualTo("image/png");
+        await Assert.That(image.DecodedData.ToArray()).IsEquivalentTo(new byte[] { 1, 2, 3 });
+        await Assert.That(TextOf(result)).IsEqualTo("Three bytes.");
+    }
+
+    [Test]
+    [MethodDataSource(nameof(ProtocolVersions))]
     public async Task CallTool_FailedCommand_IsAToolErrorWithItsCode(string protocolVersion)
     {
         await using var server = await McpTestServer.StartAsync(typeof(McpRefuseCommand));
@@ -133,6 +148,20 @@ public sealed class McpServerTests
         var result = events.IndexOf("\"result\"", StringComparison.Ordinal);
         await Assert.That(progress).IsGreaterThanOrEqualTo(0);
         await Assert.That(progress).IsLessThan(result);
+    }
+
+    [Test]
+    public async Task CallTool_SdkInformationRecords_StayOutOfTheLog()
+    {
+        await using var server = await McpTestServer.StartAsync(typeof(McpGreetCommand));
+        await using (var client = await server.ConnectAsync(HandshakeProtocolVersion))
+        {
+            await client.CallToolAsync("McpGreet", new Dictionary<string, object?> { ["name"] = "Revit" });
+        }
+
+        var log = server.Log.Entries.Select(entry => entry.Message).ToList();
+        await Assert.That(log).Contains(message => message.Contains("McpGreet", StringComparison.Ordinal));
+        await Assert.That(log).DoesNotContain(message => message.Contains("request handler", StringComparison.Ordinal));
     }
 
     [Test]
@@ -257,6 +286,7 @@ internal sealed class McpTestServer : IAsyncDisposable
         _host = host;
         Port = port;
         Server = host.Services.GetRequiredService<McpHttpServer>();
+        Log = host.Services.GetRequiredService<LogRecorder>();
         Url = new Uri($"http://localhost:{port}/mcp");
         Token = File.Exists(connectionFile) ? JsonDocument.Parse(File.ReadAllText(connectionFile)).RootElement.GetProperty("token").GetString()! : "";
     }
@@ -268,6 +298,8 @@ internal sealed class McpTestServer : IAsyncDisposable
     public string Token { get; }
 
     public McpHttpServer Server { get; }
+
+    public LogRecorder Log { get; }
 
     public static Task<McpTestServer> StartAsync(params Type[] commands)
     {

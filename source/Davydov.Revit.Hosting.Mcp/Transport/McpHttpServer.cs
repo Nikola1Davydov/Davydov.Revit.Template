@@ -71,6 +71,7 @@ internal sealed partial class McpHttpServer(
     private readonly ConcurrentDictionary<string, Session> _sessions = new(StringComparer.Ordinal);
     private readonly CancellationTokenSource _stopping = new();
     private readonly ILogger _logger = loggerFactory.CreateLogger<McpHttpServer>();
+    private readonly SdkLoggerFactory _sdkLoggerFactory = new(loggerFactory, options.Value.SdkLogLevel);
     private HttpListener? _listener;
     private Task? _acceptLoop;
     private byte[] _authorization = [];
@@ -351,9 +352,9 @@ internal sealed partial class McpHttpServer(
     {
         var id = Convert.ToHexString(RandomNumberGenerator.GetBytes(16));
 #pragma warning disable MCP9006 // The session properties of the transport are obsolete in the SDK, but the initialize handshake needs them
-        var transport = new StreamableHttpServerTransport(loggerFactory) { SessionId = id };
+        var transport = new StreamableHttpServerTransport(_sdkLoggerFactory) { SessionId = id };
 #pragma warning restore MCP9006
-        var server = McpServer.Create(transport, CreateServerOptions(), loggerFactory, services);
+        var server = McpServer.Create(transport, CreateServerOptions(), _sdkLoggerFactory, services);
         var closing = CancellationTokenSource.CreateLinkedTokenSource(_stopping.Token);
         var session = new Session(id, transport, server, server.RunAsync(closing.Token), closing);
 
@@ -365,8 +366,8 @@ internal sealed partial class McpHttpServer(
     /// <summary>A request without a session: a server lives for this request only.</summary>
     private async Task PostStatelessAsync(JsonRpcMessage message, HttpListenerResponse response)
     {
-        await using var transport = new StreamableHttpServerTransport(loggerFactory) { Stateless = true };
-        await using var server = McpServer.Create(transport, CreateServerOptions(), loggerFactory, services);
+        await using var transport = new StreamableHttpServerTransport(_sdkLoggerFactory) { Stateless = true };
+        await using var server = McpServer.Create(transport, CreateServerOptions(), _sdkLoggerFactory, services);
         using var closing = CancellationTokenSource.CreateLinkedTokenSource(_stopping.Token);
 
         var running = server.RunAsync(closing.Token);

@@ -107,6 +107,11 @@ nothing else is visible to the client. A command failure is a tool result with `
 * `%LOCALAPPDATA%\Davydov.Revit.Addin\<year>\mcp.json` holds the address, the token (kept across Revit sessions) and the
   `claude mcp add …` command for Claude Code.
 * `IMcpEndpoint.GetInfo()` returns the same details for a page; in Debug the «MCP» tab of the Dev page shows them.
+* A command that returns `McpImage` gives the client a picture, not JSON.
+* The tools of the template: `GetActiveDocument`, `GetSelection`, `SelectElements`, `RenderView` (a PNG of the active
+  view), `CountElementsByCategory`; in Debug `GetLogEntries` (the add-in log); with scripting `ExecuteCode` and
+  `DescribeApi` (the Revit API of the running version, by reflection and `RevitAPI.xml`). How an agent checks its work
+  with them — the `verify-in-revit` skill.
 * `McpHttpServer` serves both protocol revisions: the `initialize` handshake gets a session (`Mcp-Session-Id`), the
   session-less revision of 2026 gets a server per request. The protocol itself is the SDK's (`ModelContextProtocol.Core`);
   its ASP.NET Core package does not fit — Revit has no ASP.NET Core.

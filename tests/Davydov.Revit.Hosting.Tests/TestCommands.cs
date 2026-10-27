@@ -50,7 +50,7 @@ public sealed class CrashCommand : ICommand<int>
     }
 }
 
-/// <summary>Records what it saw and waits for <see cref="Gate" /> — for concurrency and middleware tests.</summary>
+/// <summary>Records what it saw and waits for <see cref="Recorder.Gate" /> — for concurrency and middleware tests.</summary>
 public sealed class ProbeCommand(Recorder recorder) : ICommand<string>
 {
     public async Task<string> ExecuteAsync(CommandContext context)
@@ -188,5 +188,15 @@ public sealed class McpScalarRequestCommand : ICommand<string, int>
     public Task<int> ExecuteAsync(string request, CommandContext context)
     {
         return Task.FromResult(request.Length);
+    }
+}
+
+[McpTool(ReadOnly = true)]
+[Command(Description = "Returns a tiny picture.")]
+public sealed class McpPictureCommand : ICommand<McpImage>
+{
+    public Task<McpImage> ExecuteAsync(CommandContext context)
+    {
+        return Task.FromResult(new McpImage([1, 2, 3], "image/png", "Three bytes."));
     }
 }

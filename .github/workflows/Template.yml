@@ -51,7 +51,7 @@ jobs:
           $leftovers = @(@($leftovers) + @(Get-ChildItem -Recurse -File | Select-String -CaseSensitive -Pattern 'Davydov') | Where-Object { $_ })
           $extra = @('tests', 'docs', 'template', 'LICENSE', 'build/RepositoryModules.cs', 'build/Modules/TemplateSolutionModule.cs', '.github/workflows/Template.yml', '.github/workflows/PublishTemplate.yml' | Where-Object { Test-Path $_ })
           # The agent files of the add-in, not the ones of this repository (those are in Russian)
-          $missing = @('AGENTS.md', 'CLAUDE.md', 'ARCHITECTURE.md', '.agents/skills/add-ribbon-button/SKILL.md', '.agents/skills/add-command/SKILL.md', '.agents/skills/add-page/SKILL.md' | Where-Object { -not (Test-Path $_) })
+          $missing = @('AGENTS.md', 'CLAUDE.md', 'ARCHITECTURE.md', '.agents/skills/add-ribbon-button/SKILL.md', '.agents/skills/add-command/SKILL.md', '.agents/skills/add-page/SKILL.md', '.agents/skills/verify-in-revit/SKILL.md' | Where-Object { -not (Test-Path $_) })
           # dotnet new keeps the .slnx; the classic .sln is only for Visual Studio (--solution-format auto)
           if (Get-ChildItem -File | Where-Object Extension -eq '.sln') { $extra += 'a .sln next to the .slnx' }
           if ((Test-Path AGENTS.md) -and (Get-Content AGENTS.md -Raw) -match '\p{IsCyrillic}') { $extra += 'AGENTS.md of the template repository' }
