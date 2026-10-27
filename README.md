@@ -1,6 +1,9 @@
 # Davydov.Revit.Template
 
 [![NuGet](https://img.shields.io/nuget/vpre/Davydov.Revit.Templates)](https://www.nuget.org/packages/Davydov.Revit.Templates)
+[![Downloads](https://img.shields.io/nuget/dt/Davydov.Revit.Templates)](https://www.nuget.org/packages/Davydov.Revit.Templates)
+[![Stars](https://img.shields.io/github/stars/Nikola1Davydov/Davydov.Revit.Template)](https://github.com/Nikola1Davydov/Davydov.Revit.Template/stargazers)
+[![Last commit](https://img.shields.io/github/last-commit/Nikola1Davydov/Davydov.Revit.Template)](https://github.com/Nikola1Davydov/Davydov.Revit.Template/commits/main)
 [![Compile](https://github.com/Nikola1Davydov/Davydov.Revit.Template/actions/workflows/Compile.yml/badge.svg)](https://github.com/Nikola1Davydov/Davydov.Revit.Template/actions/workflows/Compile.yml)
 
 A `dotnet new` template for **Revit 2025–2027** add-ins: an isolated add-in with a command pipeline, a React UI in
