@@ -111,8 +111,8 @@ nothing else is visible to the client. A command failure is a tool result with `
   `claude mcp add …` command for Claude Code.
 * `IMcpEndpoint.GetInfo()` returns the same details for a page; in Debug the «MCP» tab of the Dev page shows them.
 * A command that returns `McpImage` gives the client a picture, not JSON.
-* The tools of the template: `GetActiveDocument`, `GetSelection`, `SelectElements`, `RenderView` (a PNG of the active
-  view), `ShowGeometry` / `ClearGeometry` (geometry drawn over the views), `CountElementsByCategory`; in Debug `GetLogEntries` (the add-in log); with scripting `ExecuteCode` and
+* The tools of the template: `GetActiveDocument`, `GetSelection`, `SelectElements`, `InspectElement` (the properties and
+  parameters of an element, one level at a time, as RevitLookup shows them), `RenderView` (a PNG of the active view), `ShowGeometry` / `ClearGeometry` (geometry drawn over the views), `CountElementsByCategory`; in Debug `GetLogEntries` (the add-in log); with scripting `ExecuteCode` and
   `DescribeApi` (the Revit API of the running version, by reflection and `RevitAPI.xml`). How an agent checks its work
   with them — the `verify-in-revit` skill.
 * `McpHttpServer` serves both protocol revisions: the `initialize` handshake gets a session (`Mcp-Session-Id`), the
