@@ -19,6 +19,8 @@ public interface ICommand<TResponse>
 
 /// <summary>
 ///     A command with input. The payload of the call is deserialized into <typeparamref name="TRequest" /> before the call.
+///     A call without a payload runs with the defaults when every input of the request is optional — a record whose
+///     parameters all have defaults — and fails with <c>bad_request</c> otherwise.
 /// </summary>
 /// <typeparam name="TRequest">The input type; must be a concrete class or struct.</typeparam>
 /// <typeparam name="TResponse">The result type; <see cref="Empty" /> for no result.</typeparam>

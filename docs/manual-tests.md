@@ -178,3 +178,14 @@ Debug-сборка, проект открыт; в Claude Code после пер�
 | 6 | «Что в логе плагина за последнее время, только предупреждения?» | `GetLogEntries` с `minLevel` `Warning` |
 | 7 | «Опиши тип Wall» / `DescribeApi` с `name` `ElementId` | Члены с сигнатурами и текстом из документации; у `ElementId` в 2025 есть `IntegerValue`, в 2026 и 2027 — нет (поэтому и нужен `DescribeApi`); первый вызов — до пары секунд (чтение `RevitAPI.xml`) |
 | 8 | `DescribeApi` с `name` `Collector` | Список подходящих имён, в том числе `FilteredElementCollector` |
+
+## ExecuteCode под присмотром (решение 45)
+
+| # | Шаг | Ожидается |
+| --- | --- | --- |
+| 1 | `ExecuteCode` с транзакцией, которая переименовывает уровень, и ещё одной, которая меняет комментарий элемента | `changes.modified` — оба элемента; в Revit один шаг отмены «ExecuteCode»: Ctrl+Z возвращает и имя, и комментарий |
+| 2 | То же с `dryRun: true` | Ответ с `changes` и `rolledBack: true`; в модели ничего не изменилось, отменять нечего |
+| 3 | Скрипт: транзакция, затем `throw` | `script_failed … The changes of the script were rolled back.`; модель как была |
+| 4 | Скрипт, создающий элемент (уровень) | `changes.added` с его id |
+| 5 | `%LOCALAPPDATA%\Davydov.Revit.Addin\scripts\<дата>.jsonl` | По строке на каждый запуск шагов 1–4: версия Revit, документ, `dryRun`, итог, код |
+| 6 | `ExecuteCode` без открытого документа (`return uiapp.Application.VersionNumber;`) | Работает, `changes` пустые, `rolledBack: false` |

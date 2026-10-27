@@ -40,6 +40,7 @@ public sealed class App : IExternalApplication
             if (result != Result.Succeeded)
             {
                 StartupLog.Write(application, $"{PluginInfo.ApplicationType}.OnStartup returned {result}.");
+                Unload();
             }
 
             return result;
@@ -50,9 +51,20 @@ public sealed class App : IExternalApplication
             // The add-in's own exception, not the TargetInvocationException of the reflection call, so Revit shows its text
             var actual = exception is TargetInvocationException { InnerException: { } inner } ? inner : exception;
             StartupLog.Write(application, actual.ToString());
+            Unload();
             ExceptionDispatchInfo.Capture(actual).Throw();
             throw;
         }
+    }
+
+    /// <summary>
+    ///     Forgets the add-in after a failed start: a proxy button created before the failure then says the add-in failed
+    ///     instead of calling into a half-started one.
+    /// </summary>
+    private static void Unload()
+    {
+        PluginContext = null;
+        _application = null;
     }
 
     /// <inheritdoc />

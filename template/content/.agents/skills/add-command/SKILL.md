@@ -56,6 +56,8 @@ public sealed class RenameFamilies(ActiveDocument document) : ICommand<RenameFam
   unique; the registry reports duplicates and broken commands at startup.
 * `[Command(Description = ...)]` says what the command does — for people and AI clients.
 * Request and response are records; JSON is camelCase both ways. `Empty` is the response of a command without a result.
+* A request whose parameters all have defaults (`record PageRequest(int Size = 10)`) may come without a payload and gets
+  the defaults; with a required parameter a call without a payload is `bad_request`.
 * Dependencies come through the constructor; a command is scoped to one call.
 
 ## Step 2: Reach the model through `ActiveDocument`

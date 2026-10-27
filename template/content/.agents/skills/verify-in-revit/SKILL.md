@@ -50,7 +50,7 @@ the button and then read `GetLogEntries`.
 
 ## Rules
 
-* Change the model only as much as the check needs, and say what you changed. `ExecuteCode` with a `Transaction` is a
-  real change; the user undoes it with Ctrl+Z.
+* Change the model only as much as the check needs, and say what you changed. Try a change with `ExecuteCode` and
+  `dryRun` first: it reports `changes` and rolls back. A real run is one undo step for the user — Ctrl+Z.
 * Report what you saw — the result, the picture, the log lines — not what should happen.
 * If Revit or the server is not available, say so and what you checked without it; do not claim the change works.

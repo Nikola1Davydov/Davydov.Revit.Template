@@ -34,7 +34,8 @@ public static class SerializerRegistration
                 options.WriteIndented = builder.Environment.IsDevelopment();
                 options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
                 options.PropertyNameCaseInsensitive = true;
-                options.DefaultIgnoreCondition = builder.Environment.IsDevelopment() ? JsonIgnoreCondition.Never : JsonIgnoreCondition.WhenWritingNull;
+                // The same in Debug and Release: a page that sees null during development must not get undefined in a release
+                options.DefaultIgnoreCondition = JsonIgnoreCondition.Never;
                 options.Converters.Add(new JsonStringEnumConverter());
                 options.TypeInfoResolverChain.Add(ApplicationSerializerContext.Default);
                 options.TypeInfoResolverChain.Add(new DefaultJsonTypeInfoResolver());

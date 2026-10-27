@@ -21,11 +21,22 @@ internal static class PluginTypes
 
         if (App.PluginContext is null)
         {
-            error = $"{PluginInfo.Name} failed to start. See the startup error button on the Add-Ins tab.";
+            error = $"{PluginInfo.Name} failed to start. The reason is in startup-error.txt in %LOCALAPPDATA%\\{PluginInfo.Name}\\logs.";
             return false;
         }
 
-        var type = Cache.GetOrAdd((name, typeof(TContract)), static key => Find(key.Name, key.Contract));
+        Type? type;
+        try
+        {
+            type = Cache.GetOrAdd((name, typeof(TContract)), static key => Find(key.Name, key.Contract));
+        }
+        catch (InvalidOperationException exception)
+        {
+            // Two add-in classes with the proxy's name: a message for the user, not an unhandled exception inside Revit
+            error = exception.Message;
+            return false;
+        }
+
         if (type is null)
         {
             error = $"{PluginInfo.Name} has no {typeof(TContract).Name} class named '{name}'.";
