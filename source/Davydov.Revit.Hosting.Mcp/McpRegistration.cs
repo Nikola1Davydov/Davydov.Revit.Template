@@ -60,6 +60,7 @@ public static class McpRegistration
             }
 
             builder.Services.Configure<McpOptions>(builder.Configuration.GetSection(McpOptions.SectionName));
+
             builder.Services.AddSingleton(settings);
             builder.Services.AddSingleton<McpToolCatalog>();
             builder.Services.AddSingleton<McpTools>();

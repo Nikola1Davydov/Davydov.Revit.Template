@@ -1,5 +1,6 @@
 using Davydov.Revit.Hosting.Scripting;
 using Davydov.Revit.Hosting.Scripting.Execution;
+using Davydov.Revit.Hosting.Scripting.Reference;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,8 +20,9 @@ public static class ScriptingRegistration
     extension(RevitCommandsBuilder commands)
     {
         /// <summary>
-        ///     Adds the <see cref="ExecuteCode" /> command — C# compiled with Roslyn and run inside Revit — when scripting is on:
-        ///     in the <c>Development</c> environment by default, otherwise with <c>Scripting:Enabled</c>.
+        ///     Adds the code commands when scripting is on — in the <c>Development</c> environment by default, otherwise with
+        ///     <c>Scripting:Enabled</c>: <see cref="ExecuteCode" />, C# compiled with Roslyn and run inside Revit, and
+        ///     <see cref="DescribeApi" />, the Revit API of the running version for writing that code.
         /// </summary>
         /// <param name="builder">The host application builder: its configuration decides, its services get the runner.</param>
         /// <returns>The <see cref="RevitCommandsBuilder" /> for chaining.</returns>
@@ -44,7 +46,8 @@ public static class ScriptingRegistration
             }
 
             builder.Services.AddSingleton<ScriptRunner>();
-            return commands.FromTypes(typeof(ExecuteCode));
+            builder.Services.AddSingleton(_ => new ApiReference([typeof(Autodesk.Revit.DB.Document).Assembly, typeof(Autodesk.Revit.UI.UIApplication).Assembly]));
+            return commands.FromTypes(typeof(ExecuteCode), typeof(DescribeApi));
         }
     }
 }

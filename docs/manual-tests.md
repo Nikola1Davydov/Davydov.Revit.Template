@@ -163,3 +163,18 @@ Debug-сборка: `ExecuteCode` включена. В Claude Code (сервер
 | 8 | Вкладка «Commands» Dev-страницы, `ExecuteCode`, `{ "code": "return 1 + 1;" }` | `2` |
 | 9 | Release-сборка без `Scripting:Enabled` | Команды `ExecuteCode` нет ни в `/mcp`, ни в «Commands» |
 | 10 | Двадцать вызовов подряд | Память Revit не растёт заметно: сборки скриптов выгружаются |
+
+## Инструменты для агента (решение 44)
+
+Debug-сборка, проект открыт, Claude Code — новая сессия.
+
+| # | Шаг | Ожидается |
+| --- | --- | --- |
+| 1 | `/mcp` | Есть `RenderView`, `GetSelection`, `SelectElements`, `GetLogEntries`, `DescribeApi` |
+| 2 | «Покажи, что на виде» | `RenderView` — картинка вида в ответе агента; в `%TEMP%` не остаётся папок `…-render-…` |
+| 3 | Открыть спецификацию, `RenderView` | `view_not_exportable` |
+| 4 | Выделить несколько элементов, «что выделено?» | `GetSelection`: число и id, категория, имя каждого; с `limit` 1 — один элемент, число — полное |
+| 5 | «Выдели все двери» | `SelectElements`: двери выделены, вид приближен; модель не изменилась (Ctrl+Z нечего отменять) |
+| 6 | «Что в логе плагина за последнее время, только предупреждения?» | `GetLogEntries` с `minLevel` `Warning` |
+| 7 | «Опиши тип Wall» / `DescribeApi` с `name` `ElementId` | Члены с сигнатурами и текстом из документации; у `ElementId` в 2025 есть `IntegerValue`, в 2026 и 2027 — нет (поэтому и нужен `DescribeApi`); первый вызов — до пары секунд (чтение `RevitAPI.xml`) |
+| 8 | `DescribeApi` с `name` `Collector` | Список подходящих имён, в том числе `FilteredElementCollector` |

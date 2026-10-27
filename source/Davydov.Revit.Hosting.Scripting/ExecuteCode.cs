@@ -19,6 +19,7 @@ namespace Davydov.Revit.Hosting.Scripting;
     "and cancellationToken; Autodesk.Revit.DB, Autodesk.Revit.UI, System.Linq and System.Collections.Generic are imported, " +
     "other `using` directives may come on the first lines. `return` plain data — numbers, strings, lists, anonymous objects — " +
     "not Revit elements: return ids and names instead. To change the model open a Transaction yourself. " +
+    "Check unfamiliar types with DescribeApi first: the API differs between Revit versions. " +
     "Revit is frozen while the code runs: keep it short. Errors come back as compile_failed or script_failed with the line of the code.")]
 internal sealed class ExecuteCode(ScriptRunner runner) : ICommand<ExecuteCodeRequest, JsonElement>
 {

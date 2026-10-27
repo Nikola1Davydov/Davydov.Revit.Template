@@ -1,28 +1,38 @@
 #if DEBUG
 using Davydov.Revit.Addin.Infrastructure.Diagnostics;
 using Davydov.Revit.Hosting.Commands;
+using Davydov.Revit.Hosting.Mcp;
+using Microsoft.Extensions.Logging;
 
 namespace Davydov.Revit.Addin.Features.Dev;
 
 /// <summary>
-///     Debug-only command of the «Dev» page: returns the log records written since the caller's last call. The page polls it;
-///     <see cref="LogBuffer" /> drops the records of the polling itself.
+///     Debug-only command of the «Dev» page and of AI clients: returns the log records written since the caller's last call.
+///     The page polls it; <see cref="LogBuffer" /> drops the records of the polling itself.
 /// </summary>
-[Command(Description = "Returns the log records after the given sequence number, oldest first (Debug only).")]
+[McpTool(ReadOnly = true, Title = "Add-in log")]
+[Command(Description =
+    "Returns the add-in's log records after the given sequence number, oldest first, at most the last 1000 (Debug build only). " +
+    "Pass afterSequence 0 first, then the lastSequence of the previous answer to get only what is new. " +
+    "minLevel filters the records: Warning shows refused and failed commands, Information also every command call.")]
 public sealed class GetLogEntries(LogBuffer buffer) : ICommand<GetLogEntriesRequest, LogPage>
 {
     /// <inheritdoc />
     public Task<LogPage> ExecuteAsync(GetLogEntriesRequest request, CommandContext context)
     {
         var entries = buffer.GetAfter(request.AfterSequence);
+
+        // From all records, not the filtered ones: the next call must not see a skipped record again
         var last = entries.Count > 0 ? entries[^1].Sequence : request.AfterSequence;
-        return Task.FromResult(new LogPage(entries, last));
+        var shown = request.MinLevel is LogLevel.Trace ? entries : entries.Where(entry => entry.Level >= request.MinLevel).ToList();
+        return Task.FromResult(new LogPage(shown, last));
     }
 }
 
 /// <summary>The input of <see cref="GetLogEntries" />.</summary>
 /// <param name="AfterSequence">The <see cref="LogEntry.Sequence" /> of the last record the caller has; <c>0</c> for all.</param>
-public sealed record GetLogEntriesRequest(long AfterSequence);
+/// <param name="MinLevel">The lowest level returned; all by default.</param>
+public sealed record GetLogEntriesRequest(long AfterSequence, LogLevel MinLevel = LogLevel.Trace);
 
 /// <summary>The result of <see cref="GetLogEntries" />.</summary>
 /// <param name="Entries">The new records, oldest first; at most <see cref="LogBuffer.Capacity" />.</param>

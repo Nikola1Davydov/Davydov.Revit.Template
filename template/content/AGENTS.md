@@ -12,6 +12,7 @@ Read the skill before the task it covers:
 | A ribbon button, its availability or icon | [.agents/skills/add-ribbon-button/SKILL.md](.agents/skills/add-ribbon-button/SKILL.md) |
 | A command the pages or a button call: reading or changing the model | [.agents/skills/add-command/SKILL.md](.agents/skills/add-command/SKILL.md) |
 | A page, a window or the dock pane | [.agents/skills/add-page/SKILL.md](.agents/skills/add-page/SKILL.md) |
+| Checking a change in a running Revit: call commands, see the view, read the log | [.agents/skills/verify-in-revit/SKILL.md](.agents/skills/verify-in-revit/SKILL.md) |
 
 ## Non-negotiables
 

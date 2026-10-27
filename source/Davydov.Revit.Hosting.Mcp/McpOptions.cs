@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace Davydov.Revit.Hosting.Mcp;
 
 /// <summary>
@@ -20,4 +22,10 @@ public sealed class McpOptions
     ///     run side by side.
     /// </summary>
     public int? Port { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the lowest level of the MCP SDK's own records that reach the log; Warning by default — at Information
+    ///     the SDK writes several records per call.
+    /// </summary>
+    public LogLevel SdkLogLevel { get; set; } = LogLevel.Warning;
 }
