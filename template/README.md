@@ -27,5 +27,7 @@ The template works from the «New project» dialog of Visual Studio too. There t
 Studio would replace a `.slnx` with a solution of its own; File → Save As converts it to `.slnx`. `dotnet new` creates a
 `.slnx`; `--solution-format sln` asks for the `.sln` instead.
 
-The created project explains itself in its `README.md` and `ARCHITECTURE.md`. Source, issues and changes:
+Documentation — [the wiki](https://github.com/Nikola1Davydov/Davydov.Revit.Template/wiki): getting started, commands,
+pages, ribbon buttons, AI and MCP, settings, build and release, troubleshooting. The created project explains itself in
+its `README.md` and `ARCHITECTURE.md`. Source, issues and changes:
 [github.com/Nikola1Davydov/Davydov.Revit.Template](https://github.com/Nikola1Davydov/Davydov.Revit.Template).
