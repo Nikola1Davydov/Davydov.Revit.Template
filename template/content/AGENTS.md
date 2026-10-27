@@ -26,7 +26,8 @@ Read the skill before the task it covers:
   the user goes through `IUserNotifier`.
 * The Launcher (`source/Davydov.Revit.Addin.Launcher`) uses no type of the add-in or the modules — only names in
   strings. Their types would load into the Revit context and bypass the add-in's `AssemblyLoadContext`.
-* `Davydov.Revit.Hosting`, `Davydov.Revit.Hosting.Mcp` and `Davydov.Revit.Hosting.Scripting` stay headless: no WPF.
+* `Davydov.Revit.Hosting`, `Davydov.Revit.Hosting.Mcp`, `Davydov.Revit.Hosting.Scripting` and `Davydov.Revit.Hosting.Visualization`
+  stay headless: no WPF.
 * An AI client (MCP) sees only commands marked with `[McpTool]`: open a command to it deliberately, never by default.
 * `ExecuteCode` runs any C# with the user's rights. It exists only where scripting is on — Debug, or `Scripting:Enabled`;
   never turn it on by default in Release.

@@ -18,6 +18,7 @@ AnalyseTool. Design and decisions — [docs/PLAN.md](docs/PLAN.md) (in Russian).
 | `source/Davydov.Revit.Hosting.WebView` | module: WebView2 windows and the dock pane, the transport to the pipeline, `revit-bridge` |
 | `source/Davydov.Revit.Hosting.Mcp` | module: an MCP server inside Revit on `HttpListener`; AI clients call the commands marked with `[McpTool]` |
 | `source/Davydov.Revit.Hosting.Scripting` | module: `ExecuteCode` — C# compiled with Roslyn and run inside Revit (on in Debug) |
+| `source/Davydov.Revit.Hosting.Visualization` | module: geometry drawn over the views with DirectContext3D (`ShowGeometry`) |
 | `build/` | the build pipeline (ModularPipelines) |
 | `install/` | the `.msi` builder (WixSharp) |
 | `tests/` | tests of this repository only, not part of the template |

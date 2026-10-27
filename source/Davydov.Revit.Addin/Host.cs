@@ -63,6 +63,9 @@ public static partial class Host
         //Davydov.Revit.Hosting.Mcp: AI clients call the commands marked with [McpTool]; on in Debug, Mcp:Enabled otherwise
         builder.AddMcp(application, basePort: 47250);
 
+        //Davydov.Revit.Hosting.Visualization: geometry drawn over the views (ShowGeometry), nothing added to the model
+        builder.AddVisualization();
+
 #if DEBUG
         builder.Services.AddHostedService<StartupProbe>();
         builder.Services.Configure<DevOptions>(builder.Configuration.GetSection(DevOptions.SectionName));

@@ -17,6 +17,7 @@ How it works — [ARCHITECTURE.md](ARCHITECTURE.md). Rules and skills for people
 | `source/Davydov.Revit.Hosting.WebView` | module: WebView2 windows and the dock pane, the bridge to React (`revit-bridge`) |
 | `source/Davydov.Revit.Hosting.Mcp` | module: an MCP server inside Revit — AI clients call the commands marked with `[McpTool]` |
 | `source/Davydov.Revit.Hosting.Scripting` | module: `ExecuteCode` — C# compiled with Roslyn and run inside Revit, for AI clients and the Dev page |
+| `source/Davydov.Revit.Hosting.Visualization` | module: geometry drawn over the views (`ShowGeometry`), nothing added to the model |
 | `build/` | the build pipeline (ModularPipelines) |
 | `install/` | the `.msi` builder (WixSharp) |
 
