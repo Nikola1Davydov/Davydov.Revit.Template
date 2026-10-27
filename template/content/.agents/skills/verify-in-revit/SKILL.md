@@ -40,11 +40,12 @@ Revit restart, reconnect the server (`/mcp` in Claude Code) — that also brings
 | `GetActiveDocument` | Revit runs, which model is open |
 | your command | marked with `[McpTool]` — call it with real input; an error comes back as `code: message` |
 | `GetSelection` / `SelectElements` | what the user selected; select and zoom to what you found |
+| `InspectElement` | properties and parameters of an element by id — follow references by id and nested objects by `path` (`Location.Curve`); reads only, no code |
 | `RenderView` | a PNG of the active view — look at the result instead of guessing; the selection is highlighted; `width` 1280 by default |
 | `ShowGeometry` / `ClearGeometry` | draw elements, boxes, lines or points over the 3D views and plans without changing the model — a colour per group, then `RenderView`; clear when done |
 | `GetLogEntries` | the add-in log: `afterSequence` 0, then the `lastSequence` you got; `minLevel` `Warning` for failures |
 | `DescribeApi` | a Revit API type of this Revit version, with its members — before using a member you are not sure of |
-| `ExecuteCode` | C# on the Revit thread (`doc`, `uidoc`, `uiapp`) — to inspect what no command shows |
+| `ExecuteCode` | C# on the Revit thread (`doc`, `uidoc`, `uiapp`) — for what `InspectElement` and the commands do not show |
 
 A command that is not marked with `[McpTool]` is not visible; check it through `ExecuteCode`, or ask the user to press
 the button and then read `GetLogEntries`.
