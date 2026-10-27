@@ -1,7 +1,9 @@
 using System.Runtime.Loader;
+using System.Text.Json;
 using Davydov.Revit.Hosting.Commands;
 using Davydov.Revit.Hosting.Mcp.Tools;
 using Davydov.Revit.Hosting.Scripting.Compilation;
+using Davydov.Revit.Hosting.Scripting.Execution;
 using Davydov.Revit.Hosting.Threading;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -95,6 +97,29 @@ public sealed class ScriptingTests
         await Assert.That(registry.Find("ExecuteCode")).IsNotNull();
         await Assert.That(tool?.Annotations?.DestructiveHint ?? false).IsTrue();
         await Assert.That(tool!.InputSchema.GetProperty("properties").TryGetProperty("code", out _)).IsTrue();
+        await Assert.That(tool.InputSchema.GetProperty("properties").TryGetProperty("dryRun", out _)).IsTrue();
+    }
+
+    [Test]
+    public async Task Journal_WritesOneJsonLinePerRun()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"scripts-{Guid.NewGuid():N}");
+        var journal = new ScriptJournal(directory);
+        var time = new DateTimeOffset(2026, 10, 27, 12, 0, 0, TimeSpan.Zero);
+
+        journal.Write(new ScriptJournalEntry(time, "2025", "Model", DryRun: true, "succeeded", ScriptChanges.None, null, "return 1;"));
+        journal.Write(new ScriptJournalEntry(time, null, null, DryRun: false, "compile_failed", null, "script.cs(1,1): error", "retrun 1;"));
+
+        var lines = await File.ReadAllLinesAsync(Path.Combine(directory, $"{time.LocalDateTime:yyyy-MM-dd}.jsonl"));
+        await Assert.That(lines.Length).IsEqualTo(2);
+
+        using var first = JsonDocument.Parse(lines[0]);
+        await Assert.That(first.RootElement.GetProperty("code").GetString()).IsEqualTo("return 1;");
+        await Assert.That(first.RootElement.GetProperty("dryRun").GetBoolean()).IsTrue();
+
+        using var second = JsonDocument.Parse(lines[1]);
+        await Assert.That(second.RootElement.GetProperty("outcome").GetString()).IsEqualTo("compile_failed");
+        await Assert.That(second.RootElement.TryGetProperty("revit", out _)).IsFalse();
     }
 
     [Test]

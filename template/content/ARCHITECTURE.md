@@ -125,6 +125,11 @@ over MCP, and of the «Commands» tab of the Dev page (`{ "code": "return doc.Ti
   lifted above the generated class. Errors come back as `compile_failed` or `script_failed`, with the line of the body.
 * It compiles on the thread pool against the assemblies the add-in runs with, runs and serializes the result on the Revit
   thread, and unloads the script's assembly afterwards. The whole script is one Revit call: Revit waits until it returns.
+* With an open document the script runs inside one transaction group: its changes are one undo step, an exception rolls
+  them back, and `dryRun` runs the code, reports what it changed and rolls back. The answer has `value`, `changes`
+  (added, modified, deleted elements) and `rolledBack`.
+* Every run is a JSON line in `%LOCALAPPDATA%\Davydov.Revit.Addin\scripts\<date>.jsonl`: time, document, outcome,
+  changes and the code.
 * Any code runs with the user's rights. The command exists only while scripting is on: in Debug by default, otherwise with
   `Scripting:Enabled` — read at startup. Off, neither a page nor an AI client can reach it.
 

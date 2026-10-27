@@ -1,3 +1,4 @@
+using System.IO;
 using Davydov.Revit.Hosting.Scripting;
 using Davydov.Revit.Hosting.Scripting.Execution;
 using Davydov.Revit.Hosting.Scripting.Reference;
@@ -46,6 +47,10 @@ public static class ScriptingRegistration
             }
 
             builder.Services.AddSingleton<ScriptRunner>();
+            builder.Services.AddSingleton(new ScriptJournal(Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                builder.Environment.ApplicationName,
+                "scripts")));
             builder.Services.AddSingleton(_ => new ApiReference([typeof(Autodesk.Revit.DB.Document).Assembly, typeof(Autodesk.Revit.UI.UIApplication).Assembly]));
             return commands.FromTypes(typeof(ExecuteCode), typeof(DescribeApi));
         }
