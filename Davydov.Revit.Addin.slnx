@@ -58,6 +58,7 @@
     <Project Path="source/Davydov.Revit.Hosting/Davydov.Revit.Hosting.csproj"/>
     <Project Path="source/Davydov.Revit.Hosting.Mcp/Davydov.Revit.Hosting.Mcp.csproj"/>
     <Project Path="source/Davydov.Revit.Hosting.Scripting/Davydov.Revit.Hosting.Scripting.csproj"/>
+    <Project Path="source/Davydov.Revit.Hosting.Visualization/Davydov.Revit.Hosting.Visualization.csproj"/>
     <Project Path="source/Davydov.Revit.Hosting.WebView/Davydov.Revit.Hosting.WebView.csproj"/>
   </Folder>
   <Project Path="source/Davydov.Revit.Addin.Launcher/Davydov.Revit.Addin.Launcher.csproj"/>

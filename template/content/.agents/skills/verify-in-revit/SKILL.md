@@ -41,6 +41,7 @@ Revit restart, reconnect the server (`/mcp` in Claude Code) — that also brings
 | your command | marked with `[McpTool]` — call it with real input; an error comes back as `code: message` |
 | `GetSelection` / `SelectElements` | what the user selected; select and zoom to what you found |
 | `RenderView` | a PNG of the active view — look at the result instead of guessing; the selection is highlighted; `width` 1280 by default |
+| `ShowGeometry` / `ClearGeometry` | draw elements, boxes, lines or points over the 3D views and plans without changing the model — a colour per group, then `RenderView`; clear when done |
 | `GetLogEntries` | the add-in log: `afterSequence` 0, then the `lastSequence` you got; `minLevel` `Warning` for failures |
 | `DescribeApi` | a Revit API type of this Revit version, with its members — before using a member you are not sure of |
 | `ExecuteCode` | C# on the Revit thread (`doc`, `uidoc`, `uiapp`) — to inspect what no command shows |
@@ -53,4 +54,5 @@ the button and then read `GetLogEntries`.
 * Change the model only as much as the check needs, and say what you changed. Try a change with `ExecuteCode` and
   `dryRun` first: it reports `changes` and rolls back. A real run is one undo step for the user — Ctrl+Z.
 * Report what you saw — the result, the picture, the log lines — not what should happen.
+* To point at something, prefer `SelectElements` or `ShowGeometry` over changing the model; `ClearGeometry` when done.
 * If Revit or the server is not available, say so and what you checked without it; do not claim the change works.

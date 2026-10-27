@@ -35,7 +35,7 @@
   одного «Davydov» — это проверяет `Template.yml`.
 * Производитель — параметр `--vendor`: заменяет `<VendorId>Davydov</VendorId>` и `"Name": "Davydov"` в `build/appsettings.json`.
 * GUID-ы, которые у каждого плагина свои, — в `guids` файла `template.json`: `AddInId` в `.addin`, GUID док-панели в
-  `Host.cs`, UpgradeCode в `build/appsettings.json`. Новый такой GUID — туда же.
+  `Host.cs`, UpgradeCode в `build/appsettings.json`, id сервера DirectContext3D в `OverlayServer.cs`. Новый такой GUID — туда же.
 * `#if` в C# шаблонизатор не обрабатывает (`"*.cs": { "operations": [] }`), поэтому `#if DEBUG` безопасен, а условий
   шаблона в `.cs` нет.
 

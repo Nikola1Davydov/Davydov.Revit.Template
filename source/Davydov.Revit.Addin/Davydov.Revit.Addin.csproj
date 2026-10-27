@@ -40,6 +40,7 @@
         <ProjectReference Include="..\Davydov.Revit.Hosting.WebView\Davydov.Revit.Hosting.WebView.csproj"/>
         <ProjectReference Include="..\Davydov.Revit.Hosting.Mcp\Davydov.Revit.Hosting.Mcp.csproj"/>
         <ProjectReference Include="..\Davydov.Revit.Hosting.Scripting\Davydov.Revit.Hosting.Scripting.csproj"/>
+        <ProjectReference Include="..\Davydov.Revit.Hosting.Visualization\Davydov.Revit.Hosting.Visualization.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

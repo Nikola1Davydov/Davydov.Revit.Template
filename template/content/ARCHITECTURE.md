@@ -13,11 +13,13 @@ How the add-in starts, where the code goes and why. The rules an agent must not 
 | `source/Davydov.Revit.Hosting.WebView` | Module: WebView2 windows, the dock pane, the transport to the pipeline and `revit-bridge` for the pages. |
 | `source/Davydov.Revit.Hosting.Mcp` | Module: an MCP server inside Revit, the transport of AI clients to the pipeline. No WPF. |
 | `source/Davydov.Revit.Hosting.Scripting` | Module: the `ExecuteCode` command — C# compiled with Roslyn and run inside Revit. No WPF. |
+| `source/Davydov.Revit.Hosting.Visualization` | Module: `IGeometryOverlay` — geometry drawn over the views with DirectContext3D, nothing added to the model. No WPF. |
 | `build/` | The build pipeline (ModularPipelines): boundary check, `ClientApp`, compile, `pack`. |
 | `install/` | The `.msi` builder (WixSharp). |
 
 The modules are the add-in's own code, not a dependency: change them as the add-in needs. `Davydov.Revit.Hosting`,
-`Davydov.Revit.Hosting.Mcp` and `Davydov.Revit.Hosting.Scripting` stay headless, so the pipeline can run without the UI.
+`Davydov.Revit.Hosting.Mcp`, `Davydov.Revit.Hosting.Scripting` and `Davydov.Revit.Hosting.Visualization` stay headless, so
+the pipeline can run without the UI.
 
 ## Startup and isolation
 
@@ -47,6 +49,7 @@ that the proxy exists.
 * `AddWebView(application, ...)` — windows, the dock pane and the page source.
 * `AddMcp(application, basePort)` — the MCP server for AI clients.
 * `commands.AddScripting(builder)` inside `AddRevitCommands` — the `ExecuteCode` command, when scripting is on.
+* `AddVisualization()` — `IGeometryOverlay`, geometry drawn over the views.
 
 Classes get their dependencies through the constructor. Only ribbon buttons, which Revit creates itself, resolve
 services with `Host.GetService<T>()`.
@@ -109,7 +112,7 @@ nothing else is visible to the client. A command failure is a tool result with `
 * `IMcpEndpoint.GetInfo()` returns the same details for a page; in Debug the «MCP» tab of the Dev page shows them.
 * A command that returns `McpImage` gives the client a picture, not JSON.
 * The tools of the template: `GetActiveDocument`, `GetSelection`, `SelectElements`, `RenderView` (a PNG of the active
-  view), `CountElementsByCategory`; in Debug `GetLogEntries` (the add-in log); with scripting `ExecuteCode` and
+  view), `ShowGeometry` / `ClearGeometry` (geometry drawn over the views), `CountElementsByCategory`; in Debug `GetLogEntries` (the add-in log); with scripting `ExecuteCode` and
   `DescribeApi` (the Revit API of the running version, by reflection and `RevitAPI.xml`). How an agent checks its work
   with them — the `verify-in-revit` skill.
 * `McpHttpServer` serves both protocol revisions: the `initialize` handshake gets a session (`Mcp-Session-Id`), the
@@ -132,6 +135,29 @@ over MCP, and of the «Commands» tab of the Dev page (`{ "code": "return doc.Ti
   changes and the code.
 * Any code runs with the user's rights. The command exists only while scripting is on: in Debug by default, otherwise with
   `Scripting:Enabled` — read at startup. Off, neither a page nor an AI client can reach it.
+
+## Showing geometry (Visualization)
+
+`IGeometryOverlay` draws geometry over the views of a document — what a command found or computed — without touching the
+model: no elements, no transaction, no undo step, nothing saved. It is a DirectContext3D server, registered at the first
+`Show` and kept until Revit closes; with nothing to show it declines every view.
+
+* `OverlayGeometry` collects what to draw in one colour: an element (`Add(element)` — its solids, meshes and curves),
+  any `GeometryObject`, a `BoundingBoxXYZ`, a segment, a point (a small cross). It reads the geometry at once, on the Revit
+  thread, and keeps only points: when the element changes, show it again. The faces and edges of an element move out
+  along their normals by `ElementOffset` (about 6 mm): drawn exactly on the element, they would be hidden by it.
+* Faces are drawn with the transparency of the geometry, edges and curves opaque. Coordinates are in feet, in model
+  coordinates.
+* The geometry stays until `Clear()` or until its document closes. It is drawn in 3D views and plans and in their
+  exported images, so `RenderView` shows it. The cut of an element covers what lies behind the cut plane, and nothing
+  beyond the view range is drawn, so in a plan the server presses what is above the cut plane just onto it (what is
+  below, in a ceiling plan): a cut wall shows as its coloured footprint.
+* The commands `ShowGeometry` and `ClearGeometry` in `Features/Views/` give it to pages and AI clients: elements by id,
+  boxes, segments and points, a colour per call.
+
+```csharp
+overlay.Show(document, new OverlayGeometry(new Color(255, 0, 0), transparency: 60).Add(new BoundingBoxXYZ { Min = min, Max = max }));
+```
 
 ## Settings and logs
 
@@ -159,7 +185,8 @@ The page polls `GetLogEntries`; the records of that polling are dropped from the
 `build/Check-Boundaries.ps1` runs on every pipeline run and fails it on:
 
 * a project or package reference that the table at the top of the script does not allow;
-* WPF in `Davydov.Revit.Hosting`, `Davydov.Revit.Hosting.Mcp` or `Davydov.Revit.Hosting.Scripting`, or in `Features/` and `Services/` of the add-in;
+* WPF in `Davydov.Revit.Hosting`, `Davydov.Revit.Hosting.Mcp`, `Davydov.Revit.Hosting.Scripting` or
+  `Davydov.Revit.Hosting.Visualization`, or in `Features/` and `Services/` of the add-in;
 * `ActiveUIDocument` in `Features/` and `Services/`, outside `ActiveDocument.cs` and lines marked `// AllowActiveDocument:`;
 * a type of the add-in or the modules in the Launcher code.
 
