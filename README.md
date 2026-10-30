@@ -11,7 +11,7 @@ WebView2 and an MCP server, so AI agents can work with the running Revit. Built 
 [Nice3point Revit Templates](https://github.com/Nice3point/RevitTemplates) (MIT).
 
 ```
-dotnet new install Davydov.Revit.Templates::0.1.0-preview.1
+dotnet new install Davydov.Revit.Templates
 dotnet new davydov-revit -n Acme.Revit.Tools --vendor Acme
 ```
 
